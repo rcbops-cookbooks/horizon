@@ -61,6 +61,10 @@ package "openstack-dashboard" do
     action :upgrade
 end
 
+package "node-less" do
+    only_if { node["package_component"] == "folsom" }
+    action :upgrade
+end
 
 template node["horizon"]["local_settings_path"] do
   source "local_settings.py.erb"
