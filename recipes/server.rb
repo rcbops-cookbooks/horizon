@@ -67,7 +67,7 @@ mysql_info = create_db_and_user("mysql",
 
 platform_options["horizon_packages"].each do |pkg|
   package pkg do
-    action :upgrade
+    action :install
     options platform_options["package_overrides"]
   end
 end
