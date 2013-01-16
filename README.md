@@ -42,7 +42,7 @@ server
 ----
 -includes recipes `apache2`, `apache2:mod_wsgi`, `apache2:mod_rewrite`, `apache2:mod_ssl`, `mysql:client`  
 -installs and configures the openstack dashboard package, sets up the horizon database schema/user, and installs an appropriate apache config/site file  
--if the attribute ["horizon"]["theme"] is set to "Rackspace", will also install the Rackspace stylesheet, and grab the necessary branded jpegs  
+-if `["horizon"]["theme"]` = "Rackspace", will also install the Rackspace stylesheet, and grab the necessary branded jpegs  
 -uses chef search to discover details of where the database (default mysql) and keystone api are installed so we don't need to explicitly set them in our attributes file for this cookbook  
 
 
