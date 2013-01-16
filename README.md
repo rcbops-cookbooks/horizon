@@ -41,8 +41,9 @@ default
 server
 ----
 -includes recipes `apache2`, `apache2:mod_wsgi`, `apache2:mod_rewrite`, `apache2:mod_ssl`, `mysql:client`  
--installs and configures the openstack dashboard package, sets up the horizon database schema/user, and installs an appropriate apache config/site file
--uses chef search to discover details of where the database (default mysql) and keystone api are installed so we don't need to explicitly set them in our attributes file for this cookbook
+-installs and configures the openstack dashboard package, sets up the horizon database schema/user, and installs an appropriate apache config/site file  
+-if `["horizon"]["theme"] = "Rackspace"`, will also install the Rackspace stylesheet, and grab the necessary branded jpegs  
+-uses chef search to discover details of where the database (default mysql) and keystone api are installed so we don't need to explicitly set them in our attributes file for this cookbook  
 
 
 
@@ -59,6 +60,8 @@ Attributes
 
 * `horizon["dash_path"]` - base path for dashboard files (document root)
 * `horizon["wsgi_path"]` - path for wsgi dir
+
+* `horizon{"theme"]` = which theme to use for the dashboard. Supports "default" or "Rackspace"
 
 Templates
 =====
