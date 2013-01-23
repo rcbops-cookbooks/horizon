@@ -65,6 +65,8 @@ mysql_info = create_db_and_user("mysql",
                                 node["horizon"]["db"]["username"],
                                 node["horizon"]["db"]["password"])
 
+mysql_connect_ip = get_access_endpoint('mysql-master', 'mysql', 'db')["host"]
+
 platform_options["horizon_packages"].each do |pkg|
   package pkg do
     action :install
@@ -81,7 +83,7 @@ template node["horizon"]["local_settings_path"] do
             :user => node["horizon"]["db"]["username"],
             :passwd => node["horizon"]["db"]["password"],
             :db_name => node["horizon"]["db"]["name"],
-            :db_ipaddress => mysql_info["bind_address"],
+            :db_ipaddress => mysql_connect_ip,
             :keystone_api_ipaddress => ks_admin_endpoint["host"],
             :service_port => ks_service_endpoint["port"],
             :admin_port => ks_admin_endpoint["port"],
