@@ -5,6 +5,8 @@ default["horizon"]["db"]["name"] = "dash"                                       
 default["horizon"]["use_ssl"] = true                                                        # node_attribute
 default["horizon"]["ssl"]["cert"] = "horizon.pem"                                           # node_attribute
 default["horizon"]["ssl"]["key"] = "horizon.key"                                            # node_attribute
+default["horizon"]["http"]["port"] = 80
+default["horizon"]["https"]["port"] = 443
 
 default["horizon"]["swift"]["enabled"] = "False"
 
