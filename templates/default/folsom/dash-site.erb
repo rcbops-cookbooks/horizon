@@ -3,14 +3,14 @@
 <% if not node["custom_template_banner"].nil? %>
 <%= node["custom_template_banner"] %>
 <% end %>
-<VirtualHost *:<%= @http_port %>>
+<VirtualHost <%= @listen_ip %>:<%= @http_port %>>
 <% if @use_ssl %>
    RewriteEngine On
    RewriteCond %{HTTPS} off
    RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R]
 </VirtualHost>
 
-<VirtualHost *:<%= @https_port %>>
+<VirtualHost <%= @listen_ip %>:<%= @https_port %>>
 <% end %>
   ServerAdmin <%= @apache_contact %>
   WSGIScriptAlias / <%= @django_wsgi_path %>/django.wsgi

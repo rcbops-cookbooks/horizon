@@ -42,6 +42,19 @@ include_recipe "apache2::mod_wsgi"
 include_recipe "apache2::mod_rewrite"
 include_recipe "apache2::mod_ssl"
 
+listen_ip = get_bind_endpoint("horizon", "dash")["host"]
+
+# rewrite the ports.conf to not listen on all IPs
+template "#{node['apache']['dir']}/ports.conf" do
+  source "ports.conf.erb"
+  owner "root"
+  group node["apache"]["root_group"]
+  variables(:apache_listen_ports => node["apache"]["listen_ports"].map { |p| p.to_i }.uniq,
+             :listen_ip => listen_ip)
+  mode 00644
+  notifies :restart, "service[apache2]"
+end
+
 #
 # Workaround to re-enable selinux after installing apache on a fedora machine that has
 # selinux enabled and is currently permissive and the configuration set to enforcing.
@@ -152,7 +165,8 @@ template value_for_platform(
       :wsgi_user => node["apache"]["user"],
       :wsgi_group => node["apache"]["group"],
       :http_port => node["horizon"]["http"]["port"],
-      :https_port => node["horizon"]["https"]["port"]
+      :https_port => node["horizon"]["https"]["port"],
+      :listen_ip => listen_ip
   )
   notifies :run, "execute[restore-selinux-context]", :immediately
 end
