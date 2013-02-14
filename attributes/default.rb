@@ -8,6 +8,11 @@ default["horizon"]["ssl"]["key"] = "horizon.key"                                
 default["horizon"]["http"]["port"] = 80
 default["horizon"]["https"]["port"] = 443
 
+default["horizon"]["services"]["dash"]["scheme"] = "https"                       # node_attribute
+default["horizon"]["services"]["dash"]["network"] = "public"                    # node_attribute
+default["horizon"]["services"]["dash"]["port"] = 443                           # node_attribute
+default["horizon"]["services"]["dash"]["path"] = "/"
+
 default["horizon"]["swift"]["enabled"] = "False"
 
 default["horizon"]["theme"] = "default"
