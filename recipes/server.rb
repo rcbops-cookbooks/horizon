@@ -164,8 +164,8 @@ template value_for_platform(
       :dash_path => node["horizon"]["dash_path"],
       :wsgi_user => node["apache"]["user"],
       :wsgi_group => node["apache"]["group"],
-      :http_port => node["horizon"]["http"]["port"],
-      :https_port => node["horizon"]["https"]["port"],
+      :http_port => node["horizon"]["services"]["dash"]["port"],
+      :https_port => node["horizon"]["services"]["dash_ssl"]["port"],
       :listen_ip => listen_ip
   )
   notifies :run, "execute[restore-selinux-context]", :immediately

@@ -5,13 +5,16 @@ default["horizon"]["db"]["name"] = "dash"                                       
 default["horizon"]["use_ssl"] = true                                                        # node_attribute
 default["horizon"]["ssl"]["cert"] = "horizon.pem"                                           # node_attribute
 default["horizon"]["ssl"]["key"] = "horizon.key"                                            # node_attribute
-default["horizon"]["http"]["port"] = 80
-default["horizon"]["https"]["port"] = 443
 
-default["horizon"]["services"]["dash"]["scheme"] = "https"                       # node_attribute
+default["horizon"]["services"]["dash"]["scheme"] = "http"                       # node_attribute
 default["horizon"]["services"]["dash"]["network"] = "public"                    # node_attribute
-default["horizon"]["services"]["dash"]["port"] = 443                           # node_attribute
+default["horizon"]["services"]["dash"]["port"] = 80                           # node_attribute
 default["horizon"]["services"]["dash"]["path"] = "/"
+
+default["horizon"]["services"]["dash_ssl"]["scheme"] = "https"                       # node_attribute
+default["horizon"]["services"]["dash_ssl"]["network"] = "public"                    # node_attribute
+default["horizon"]["services"]["dash_ssl"]["port"] = 443                           # node_attribute
+default["horizon"]["services"]["dash_ssl"]["path"] = "/"
 
 default["horizon"]["swift"]["enabled"] = "False"
 
