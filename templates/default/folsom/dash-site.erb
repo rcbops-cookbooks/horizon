@@ -16,6 +16,7 @@
   WSGIScriptAlias / <%= @django_wsgi_path %>/django.wsgi
   WSGIDaemonProcess dashboard user=<%= @wsgi_user %> group=<%= @wsgi_group %> processes=3 threads=10 python-path=<%= @dash_path %>
   WSGIProcessGroup dashboard
+  WSGIApplicationGroup %{GLOBAL}
 
   DocumentRoot <%= @dash_path %>/.blackhole/
   Alias /media <%= @dash_path %>/media
