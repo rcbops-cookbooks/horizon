@@ -29,6 +29,9 @@ when "fedora", "centos", "redhat", "amazon", "scientific"
     "horizon_packages" => ["openstack-dashboard", "MySQL-python"],
     "package_overrides" => ""
   }
+  default["horizon"]["dash_path"] = "/usr/share/openstack-dashboard"      # node_attribute
+  default["horizon"]["stylesheet_path"] = "/usr/share/openstack-dashboard/openstack_dashboard/templates/_stylesheets.html"
+  default["horizon"]["wsgi_path"] = node["horizon"]["dash_path"] + "/openstack_dashboard/wsgi"                    # node_attribute
 when "ubuntu", "debian"
   default["horizon"]["ssl"]["dir"] = "/etc/ssl"                                             # node_attribute
   default["horizon"]["local_settings_path"] = "/etc/openstack-dashboard/local_settings.py"  # node_attribute
@@ -36,8 +39,8 @@ when "ubuntu", "debian"
     "horizon_packages" => ["lessc","openstack-dashboard", "python-mysqldb"],
     "package_overrides" => "-o Dpkg::Options::='--force-confold' -o Dpkg::Options::='--force-confdef'"
   }
+  default["horizon"]["dash_path"] = "/usr/share/openstack-dashboard/openstack_dashboard"      # node_attribute
+  default["horizon"]["stylesheet_path"] = "/usr/share/openstack-dashboard/openstack_dashboard/templates/_stylesheets.html"
+  default["horizon"]["wsgi_path"] = node["horizon"]["dash_path"] + "/wsgi"                    # node_attribute
 end
 
-default["horizon"]["dash_path"] = "/usr/share/openstack-dashboard/openstack_dashboard"      # node_attribute
-default["horizon"]["stylesheet_path"] = "/usr/share/openstack-dashboard/openstack_dashboard/templates/_stylesheets.html"
-default["horizon"]["wsgi_path"] = node["horizon"]["dash_path"] + "/wsgi"                    # node_attribute
