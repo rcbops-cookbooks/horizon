@@ -13,8 +13,8 @@ Chef 0.10.0 or higher required (for Chef environment use).
 Platforms
 --------
 
-* Ubuntu-12.04
-* Fedora-17
+* CentOS >= 6.3
+* Ubuntu >= 12.04
 
 Cookbooks
 ---------
@@ -22,8 +22,7 @@ Cookbooks
 The following cookbooks are dependencies:
 
 * apache2
-* database
-* mysql
+* osops-utils
 
 Resources/Providers
 ===================
@@ -36,14 +35,14 @@ Recipes
 
 default
 ----
--includes recipe `server`  
+* includes recipe `server`  
 
 server
 ----
--includes recipes `apache2`, `apache2:mod_wsgi`, `apache2:mod_rewrite`, `apache2:mod_ssl`, `mysql:client`  
--installs and configures the openstack dashboard package, sets up the horizon database schema/user, and installs an appropriate apache config/site file  
--if `["horizon"]["theme"] = "Rackspace"`, will also install the Rackspace stylesheet, and grab the necessary branded jpegs  
--uses chef search to discover details of where the database (default mysql) and keystone api are installed so we don't need to explicitly set them in our attributes file for this cookbook  
+* includes recipes `apache2`, `apache2:mod_wsgi`, `apache2:mod_rewrite`, `apache2:mod_ssl`
+* installs and configures the openstack dashboard package, sets up the horizon database schema/user, and installs an appropriate apache config/site file  
+* if `["horizon"]["theme"] = "Rackspace"`, will also install the Rackspace stylesheet, and grab the necessary branded jpegs  
+* uses chef search to discover details of where the database (default mysql) and keystone api are installed so we don't need to explicitly set them in our attributes file for this cookbook  
 
 
 
@@ -54,21 +53,33 @@ Attributes
 * `horizon["db"]["password"]` - password for horizon database access
 
 * `horizon["use_ssl"]` - toggle for using ssl with dashboard (default true)
-* `horizon["ssl"]["dir"]` - directory where ssl certs are stored on this system
 * `horizon["ssl"]["cert"]` - name to use when creating the ssl certificate
 * `horizon["ssl"]["key"]` - name to use when creating the ssl key
 
-* `horizon["dash_path"]` - base path for dashboard files (document root)
-* `horizon["wsgi_path"]` - path for wsgi dir
+* `horizon["services"]["dash"]["scheme"]` - defaults to http
+* `horizon["services"]["dash"]["network"]` - `osops_networks` network name which service operates on
+* `horizon["services"]["dash"]["port"]` - port to bind service to
+* `horizon["services"]["dash"]["path"]` - URI to use
 
-* `horizon{"theme"]` = which theme to use for the dashboard. Supports "default" or "Rackspace"
+* `horizon["services"]["dash_ssl"]["scheme"]` - defaults to https
+* `horizon["services"]["dash_ssl"]["network"]` - `osops_networks` network name which service operates on
+* `horizon["services"]["dash_ssl"]["port"]` - port to bind service to
+* `horizon["services"]["dash_ssl"]["path"]` - URI to use
+
+* `horizon["swift"]["enabled"]` - enable if swift endpoint is available
+
+* `horizon["theme"]` - which theme to use for the dashboard. Supports "default" or "Rackspace"
+
+* `horizon["platform"]` - Hash of platform specific package/service names and options
 
 Templates
 =====
 
+* `default_stylesheets.html.erb` - default stylesheet
 * `dash-site.erb` - the apache config file for the dashboard vhost
 * `local_settings.py.erb` - config file for the dashboard application
-
+* `ports.conf.erb` - Apache ports.conf file
+* `rs_stylesheets.html.erb` - Rackspace stylesheet
 
 License and Author
 ==================
@@ -80,6 +91,7 @@ Author:: Joseph Breu (<joseph.breu@rackspace.com>)
 Author:: William Kelly (<william.kelly@rackspace.com>)  
 Author:: Darren Birkett (<darren.birkett@rackspace.co.uk>)  
 Author:: Evan Callicoat (<evan.callicoat@rackspace.com>)  
+Author:: Matt Thompson (<matt.thompson@rackspace.co.uk>)  
 
 Copyright 2012, Rackspace US, Inc.  
 
