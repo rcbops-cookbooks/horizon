@@ -8,6 +8,6 @@ version          "1.0.14"
   supports os
 end
 
-%w{ apache2 osops-utils }.each do |dep|
+%w{ apache2 database mysql osops-utils }.each do |dep|
   depends dep
 end

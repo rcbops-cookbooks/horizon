@@ -22,6 +22,8 @@ Cookbooks
 The following cookbooks are dependencies:
 
 * apache2
+* database
+* mysql
 * osops-utils
 
 Resources/Providers
