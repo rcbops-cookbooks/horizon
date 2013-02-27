@@ -66,8 +66,8 @@ execute "set-selinux-enforcing" do
   only_if "[ -e /etc/httpd/conf/httpd.conf ] && [ -e /etc/redhat-release ] && [ $(/sbin/sestatus | grep -c '^Current mode:.*permissive') -eq 1 ] && [ $(/sbin/sestatus | grep -c '^Mode from config file:.*enforcing') -eq 1 ]"
 end
 
-ks_admin_endpoint = get_access_endpoint("keystone", "keystone", "admin-api")
-ks_service_endpoint = get_access_endpoint("keystone", "keystone", "service-api")
+ks_admin_endpoint = get_access_endpoint("keystone-api", "keystone", "admin-api")
+ks_service_endpoint = get_access_endpoint("keystone-api", "keystone", "service-api")
 keystone = get_settings_by_role("keystone", "keystone")
 
 #creates db and user
