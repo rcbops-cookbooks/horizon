@@ -26,7 +26,7 @@ when "fedora", "centos", "redhat", "amazon", "scientific"
   default["horizon"]["local_settings_path"] = "/etc/openstack-dashboard/local_settings"     # node_attribute
   # TODO(shep) - Fedora does not generate self signed certs by default
   default["horizon"]["platform"] = {                                                   # node_attribute
-    "horizon_packages" => ["openstack-dashboard", "MySQL-python"],
+    "horizon_packages" => ["openstack-dashboard", "MySQL-python", "python-netaddr"],
     "package_overrides" => ""
   }
   default["horizon"]["dash_path"] = "/usr/share/openstack-dashboard"      # node_attribute
