@@ -16,6 +16,10 @@ WEBROOT=''
 LOGIN_URL = WEBROOT+'/auth/login/'
 LOGOUT_URL = WEBROOT+'/auth/logout/'
 LOGIN_REDIRECT_URL = WEBROOT+'/syspanel'
+
+# oh noes... disabled compressed CSS on EPEL based systems until node
+# tools are packaged properly...  
+COMPRESS_ENABLED = False
 <% end %>
 
 # Set SSL proxy settings:
