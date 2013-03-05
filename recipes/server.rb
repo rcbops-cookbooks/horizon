@@ -221,22 +221,12 @@ directory "/var/www/.novaclient" do
   action :create
 end
 
-# this is necessary on rhel and centos (and probably fedora) to rebuild the
-# compressed css cache on disk.  If you do not do this then the horizon
-# dashboard will fail to display
-execute "compress-horizon-css" do
-  command "python /usr/share/openstack-dashboard/manage.py compress"
-  action :nothing
-  only_if { platform?("fedora","redhat","centos") }
-end
-
 cookbook_file "#{node["horizon"]["dash_path"]}/static/dashboard/css/folsom.css" do
   only_if { node["horizon"]["theme"] == "Rackspace" and node["package_component"] == "folsom" }
   source "css/folsom.css"
   mode 0644
   owner "root"
   group grp
-  notifies :run, "execute[compress-horizon-css]", :immediately
 end
 
 template node["horizon"]["stylesheet_path"] do
