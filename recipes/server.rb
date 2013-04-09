@@ -31,12 +31,6 @@ end
 
 platform_options = node["horizon"]["platform"]
 
-if not node['package_component'].nil?
-    release = node['package_component']
-else
-    release = "folsom"
-end
-
 include_recipe "apache2"
 include_recipe "apache2::mod_wsgi"
 include_recipe "apache2::mod_rewrite"
@@ -88,7 +82,7 @@ platform_options["horizon_packages"].each do |pkg|
 end
 
 template node["horizon"]["local_settings_path"] do
-  source "#{release}/local_settings.py.erb"
+  source "local_settings.py.erb"
   owner "root"
   group "root"
   mode "0644"
@@ -150,7 +144,7 @@ template value_for_platform(
   [ "redhat","centos" ] => { "default" => "#{node["apache"]["dir"]}/conf.d/openstack-dashboard" },
   "default" => { "default" => "#{node["apache"]["dir"]}/openstack-dashboard" }
   ) do
-  source "#{release}/dash-site.erb"
+  source "dash-site.erb"
   owner "root"
   group "root"
   mode "0644"
@@ -222,7 +216,7 @@ directory "/var/www/.novaclient" do
 end
 
 cookbook_file "#{node["horizon"]["dash_path"]}/static/dashboard/css/folsom.css" do
-  only_if { node["horizon"]["theme"] == "Rackspace" and node["package_component"] == "folsom" }
+  only_if { node["horizon"]["theme"] }
   source "css/folsom.css"
   mode 0644
   owner "root"
@@ -230,7 +224,6 @@ cookbook_file "#{node["horizon"]["dash_path"]}/static/dashboard/css/folsom.css" 
 end
 
 template node["horizon"]["stylesheet_path"] do
-  only_if { node["package_component"] == "folsom" }
   if node["horizon"]["theme"] == "Rackspace"
     source "rs_stylesheets.html.erb"
   else
@@ -251,7 +244,7 @@ end
 
   # See if modified before trying to run
   http_request "HEAD http://2a3f85ca3f24efb48c75-a90b34915fe2401d418a3390713e5cce.r22.cf1.rackcdn.com/#{imgname}" do
-    only_if { node["horizon"]["theme"] == "Rackspace" and node["package_component"] == "folsom" }
+    only_if { node["horizon"]["theme"] == "Rackspace" }
     message ""
     url "http://2a3f85ca3f24efb48c75-a90b34915fe2401d418a3390713e5cce.r22.cf1.rackcdn.com/#{imgname}"
     action :head
