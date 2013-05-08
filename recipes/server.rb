@@ -23,6 +23,10 @@
 #             and it should simply be a restorecon on the configuration file(s) and not
 #             change the selinux mode
 #
+
+chef_gem "chef-rewind"
+require 'chef/rewind'
+
 execute "set-selinux-permissive" do
   command "/sbin/setenforce Permissive"
   action :run
@@ -31,22 +35,30 @@ end
 
 platform_options = node["horizon"]["platform"]
 
-include_recipe "apache2"
-include_recipe "apache2::mod_wsgi"
-include_recipe "apache2::mod_rewrite"
-include_recipe "apache2::mod_ssl"
-
 # Bind to 0.0.0.0, but only if we're not using openstack-ha w/ a horizon-ha VIP,
-# # otherwise HAProxy will fail to start when trying to bind horizon VIP
+# otherwise HAProxy will fail to start when trying to bind horizon VIP
 if get_role_count("openstack-ha") > 0 and rcb_safe_deref(node, "vips.horizon-dash")
   listen_ip = get_bind_endpoint("horizon", "dash")["host"]
 else
   listen_ip = "0.0.0.0"
 end
 
-# rewrite the ports.conf to not listen on all IPs
-template "#{node['apache']['dir']}/ports.conf" do
+include_recipe "apache2"
+include_recipe "apache2::mod_wsgi"
+include_recipe "apache2::mod_rewrite"
+include_recipe "horizon::mod_ssl"
+
+# now rewind the ports.conf template resource laid down by the
+# apache2::default recipe
+unless node['apache']['listen_ports'].include?("443")
+  node.set['apache']['listen_ports'] = node['apache']['listen_ports'] + ["443"]
+end
+
+ports = node['apache']['listen_ports']
+
+rewind "template[#{node["apache"]["dir"]}/ports.conf]" do
   source "ports.conf.erb"
+  cookbook_name "horizon"
   owner "root"
   group node["apache"]["root_group"]
   variables(:apache_listen_ports => node["apache"]["listen_ports"].map { |p| p.to_i }.uniq,
