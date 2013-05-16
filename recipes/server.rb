@@ -259,6 +259,6 @@ end
   remote_file "#{node["horizon"]["dash_path"]}/static/dashboard/img/#{imgname}" do
     source "http://2a3f85ca3f24efb48c75-a90b34915fe2401d418a3390713e5cce.r22.cf1.rackcdn.com/#{imgname}"
     mode "0644"
-    action :nothing
+    action :create_if_missing
   end
 end
