@@ -94,7 +94,7 @@ mysql_connect_ip = get_access_endpoint('mysql-master', 'mysql', 'db')["host"]
 
 platform_options["horizon_packages"].each do |pkg|
   package pkg do
-    action :install
+    action node["osops"]["do_package_upgrades"] == true ? :upgrade : :install
     options platform_options["package_overrides"]
   end
 end
