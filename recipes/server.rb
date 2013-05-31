@@ -42,7 +42,13 @@ include_recipe "apache2::mod_wsgi"
 include_recipe "apache2::mod_rewrite"
 include_recipe "apache2::mod_ssl"
 
-listen_ip = get_bind_endpoint("horizon", "dash")["host"]
+# Bind to 0.0.0.0, but only if we're not using openstack-ha w/ a horizon-ha VIP,
+# otherwise HAProxy will fail to start when trying to bind horizon VIP
+if get_role_count("openstack-ha") > 0 and rcb_safe_deref(node, "vips.horizon-dash")
+  listen_ip = get_bind_endpoint("horizon", "dash")["host"]
+else
+  listen_ip = "0.0.0.0"
+end
 
 # rewrite the ports.conf to not listen on all IPs
 template "#{node['apache']['dir']}/ports.conf" do
