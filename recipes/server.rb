@@ -155,6 +155,13 @@ directory "#{node["horizon"]["dash_path"]}/.blackhole" do
   action :create
 end
 
+# this file is in the package - we need to delete
+# it because we do it better
+file "#{node["apache"]["dir"]}/conf.d/openstack-dashboard.conf" do
+  action :delete
+  backup false
+end
+
 # TODO(breu): verify this for fedora
 template value_for_platform(
   [ "ubuntu","debian","fedora" ] => { "default" => "#{node["apache"]["dir"]}/sites-available/openstack-dashboard" },
@@ -181,14 +188,7 @@ template value_for_platform(
       :listen_ip => listen_ip
   )
   notifies :run, "execute[restore-selinux-context]", :immediately
-end
-
-# fedora includes this file in the package - we need to delete
-# it because we do it better
-file "#{node["apache"]["dir"]}/conf.d/openstack-dashboard.conf" do
-  action :delete
-  backup false
-  only_if { platform?("fedora","redhat","centos") }
+  notifies :reload, resources(:service => "apache2"), :immediately
 end
 
 # ubuntu includes their own branding - we need to delete this until ubuntu makes this a
