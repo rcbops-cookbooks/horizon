@@ -18,10 +18,11 @@
 #
 
 #
-# Workaround to install apache2 on a fedora machine with selinux set to enforcing
-# TODO(breu): this should move to a subscription of the template from the apache2 recipe
-#             and it should simply be a restorecon on the configuration file(s) and not
-#             change the selinux mode
+# Workaround to install apache2 on a fedora machine with selinux set to
+# enforcing
+# TODO(breu): this should move to a subscription of the template from the
+#             apache2 recipe and it should simply be a restorecon on the
+#             configuration file(s) and not change the selinux mode
 #
 
 chef_gem "chef-rewind"
@@ -30,14 +31,16 @@ require 'chef/rewind'
 execute "set-selinux-permissive" do
   command "/sbin/setenforce Permissive"
   action :run
-  only_if "[ ! -e /etc/httpd/conf/httpd.conf ] && [ -e /etc/redhat-release ] && [ $(/sbin/sestatus | grep -c '^Current mode:.*enforcing') -eq 1 ]"
+  only_if "[ ! -e /etc/httpd/conf/httpd.conf ] && [ -e /etc/redhat-release ] &&
+    [ $(/sbin/sestatus | grep -c '^Current mode:.*enforcing') -eq 1 ]"
 end
 
 platform_options = node["horizon"]["platform"]
 
-# Bind to 0.0.0.0, but only if we're not using openstack-ha w/ a horizon-ha VIP,
-# otherwise HAProxy will fail to start when trying to bind horizon VIP
-if get_role_count("openstack-ha") > 0 and rcb_safe_deref(node, "vips.horizon-dash")
+# Bind to 0.0.0.0, but only if we're not using openstack-ha w/ a horizon-ha
+# VIP, otherwise HAProxy will fail to start when trying to bind horizon VIP
+if get_role_count("openstack-ha") > 0 and
+  rcb_safe_deref(node, "vips.horizon-dash")
   listen_ip = get_bind_endpoint("horizon", "dash")["host"]
 else
   listen_ip = "0.0.0.0"
@@ -61,8 +64,9 @@ rewind "template[#{node["apache"]["dir"]}/ports.conf]" do
   cookbook_name "horizon"
   owner "root"
   group node["apache"]["root_group"]
-  variables(:apache_listen_ports => node["apache"]["listen_ports"].map { |p| p.to_i }.uniq,
-             :listen_ip => listen_ip)
+  variables(
+    :apache_listen_ports => node["apache"]["listen_ports"].map { |p| p.to_i }.uniq,
+    :listen_ip => listen_ip)
   mode 00644
   notifies :restart, "service[apache2]"
 end
@@ -75,7 +79,9 @@ end
 execute "set-selinux-enforcing" do
   command "/sbin/setenforce Enforcing ; restorecon -R /etc/httpd"
   action :run
-  only_if "[ -e /etc/httpd/conf/httpd.conf ] && [ -e /etc/redhat-release ] && [ $(/sbin/sestatus | grep -c '^Current mode:.*permissive') -eq 1 ] && [ $(/sbin/sestatus | grep -c '^Mode from config file:.*enforcing') -eq 1 ]"
+  only_if "[ -e /etc/httpd/conf/httpd.conf ] && [ -e /etc/redhat-release ] &&
+    [ $(/sbin/sestatus | grep -c '^Current mode:.*permissive') -eq 1 ] &&
+    [ $(/sbin/sestatus | grep -c '^Mode from config file:.*enforcing') -eq 1 ]"
 end
 
 ks_admin_endpoint = get_access_endpoint("keystone-api", "keystone", "admin-api")
@@ -85,10 +91,12 @@ keystone = get_settings_by_role("keystone-setup", "keystone")
 #creates db and user
 #returns connection info
 #defined in osops-utils/libraries
-mysql_info = create_db_and_user("mysql",
-                                node["horizon"]["db"]["name"],
-                                node["horizon"]["db"]["username"],
-                                node["horizon"]["db"]["password"])
+mysql_info = create_db_and_user(
+  "mysql",
+  node["horizon"]["db"]["name"],
+  node["horizon"]["db"]["username"],
+  node["horizon"]["db"]["password"]
+)
 
 mysql_connect_ip = get_access_endpoint('mysql-master', 'mysql', 'db')["host"]
 
@@ -105,22 +113,21 @@ template node["horizon"]["local_settings_path"] do
   group "root"
   mode "0644"
   variables(
-            :user => node["horizon"]["db"]["username"],
-            :passwd => node["horizon"]["db"]["password"],
-            :db_name => node["horizon"]["db"]["name"],
-            :db_ipaddress => mysql_connect_ip,
-            :keystone_api_ipaddress => ks_admin_endpoint["host"],
-            :service_port => ks_service_endpoint["port"],
-            :admin_port => ks_admin_endpoint["port"],
-            :admin_token => keystone["admin_token"],
-            :swift_enable => node["horizon"]["swift"]["enabled"]
+    :user => node["horizon"]["db"]["username"],
+    :passwd => node["horizon"]["db"]["password"],
+    :db_name => node["horizon"]["db"]["name"],
+    :db_ipaddress => mysql_connect_ip,
+    :keystone_api_ipaddress => ks_admin_endpoint["host"],
+    :service_port => ks_service_endpoint["port"],
+    :admin_port => ks_admin_endpoint["port"],
+    :swift_enable => node["horizon"]["swift"]["enabled"]
   )
 end
 
 # FIXME: this shouldn't run every chef run
 execute "openstack-dashboard syncdb" do
   cwd "/usr/share/openstack-dashboard"
-  environment ({'PYTHONPATH' => '/etc/openstack-dashboard:/usr/share/openstack-dashboard:$PYTHONPATH'})
+  environment({ 'PYTHONPATH' => '/etc/openstack-dashboard:/usr/share/openstack-dashboard:$PYTHONPATH' })
   command "python manage.py syncdb --noinput"
   action :run
   # not_if "/usr/bin/mysql -u root -e 'describe #{node["dash"]["db"]}.django_content_type'"
@@ -135,10 +142,10 @@ cookbook_file "#{node["horizon"]["ssl"]["dir"]}/certs/#{node["horizon"]["ssl"]["
 end
 
 case node["platform"]
-when "ubuntu","debian"
-    grp = "ssl-cert"
+when "ubuntu", "debian"
+  grp = "ssl-cert"
 else
-    grp = "root"
+  grp = "root"
 end
 
 cookbook_file "#{node["horizon"]["ssl"]["dir"]}/private/#{node["horizon"]["ssl"]["key"]}" do
@@ -164,16 +171,24 @@ end
 
 # TODO(breu): verify this for fedora
 template value_for_platform(
-  [ "ubuntu","debian","fedora" ] => { "default" => "#{node["apache"]["dir"]}/sites-available/openstack-dashboard" },
-  "fedora" => { "default" => "#{node["apache"]["dir"]}/vhost.d/openstack-dashboard" },
-  [ "redhat","centos" ] => { "default" => "#{node["apache"]["dir"]}/conf.d/openstack-dashboard" },
-  "default" => { "default" => "#{node["apache"]["dir"]}/openstack-dashboard" }
-  ) do
-  source "dash-site.erb"
-  owner "root"
-  group "root"
-  mode "0644"
-  variables(
+  ["ubuntu", "debian", "fedora"] => {
+    "default" => "#{node["apache"]["dir"]}/sites-available/openstack-dashboard"
+  },
+  "fedora" => {
+    "default" => "#{node["apache"]["dir"]}/vhost.d/openstack-dashboard"
+  },
+  ["redhat", "centos"] => {
+    "default" => "#{node["apache"]["dir"]}/conf.d/openstack-dashboard"
+  },
+  "default" => {
+    "default" => "#{node["apache"]["dir"]}/openstack-dashboard"
+  }
+) do
+    source "dash-site.erb"
+    owner "root"
+    group "root"
+    mode "0644"
+    variables(
       :use_ssl => node["horizon"]["use_ssl"],
       :apache_contact => node["apache"]["contact"],
       :ssl_cert_file => "#{node["horizon"]["ssl"]["dir"]}/certs/#{node["horizon"]["ssl"]["cert"]}",
@@ -186,39 +201,39 @@ template value_for_platform(
       :http_port => node["horizon"]["services"]["dash"]["port"],
       :https_port => node["horizon"]["services"]["dash_ssl"]["port"],
       :listen_ip => listen_ip
-  )
-  notifies :run, "execute[restore-selinux-context]", :immediately
-  notifies :reload, resources(:service => "apache2"), :immediately
-end
+    )
+    notifies :run, "execute[restore-selinux-context]", :immediately
+    notifies :reload, "service[apache2]", :immediately
+  end
 
 # ubuntu includes their own branding - we need to delete this until ubuntu makes this a
 # configurable paramter
 package "openstack-dashboard-ubuntu-theme" do
   action :purge
-  only_if {platform?("ubuntu")}
+  only_if { platform?("ubuntu") }
 end
 
-if platform?("debian","ubuntu") then
+if platform?("debian", "ubuntu") then
   apache_site "000-default" do
     enable false
   end
 elsif platform?("fedora") then
   apache_site "default" do
     enable false
-    notifies :run, resources(:execute => "restore-selinux-context"), :immediately
+    notifies :run, "execute[restore-selinux-context]", :immediately
   end
 end
 
 apache_site "openstack-dashboard" do
   enable true
-  notifies :run, resources(:execute => "restore-selinux-context"), :immediately
-  notifies :reload, resources(:service => "apache2"), :immediately
+  notifies :run, "execute[restore-selinux-context]", :immediately
+  notifies :reload, "service[apache2]", :immediately
 end
 
 execute "restore-selinux-context" do
-    command "restorecon -Rv /etc/httpd /etc/pki; chcon -R -t httpd_sys_content_t /usr/share/openstack-dashboard || :"
-    action :nothing
-    only_if { platform?("fedora") }
+  command "restorecon -Rv /etc/httpd /etc/pki; chcon -R -t httpd_sys_content_t /usr/share/openstack-dashboard || :"
+  action :nothing
+  only_if { platform?("fedora") }
 end
 
 # TODO(shep)
@@ -255,7 +270,9 @@ end
 # NOTE(mancdaz): check in on http://tickets.opscode.com/browse/CHEF-3949
 # and one day we might be able to use etags cleanly
 if node["horizon"]["theme"] == "Rackspace"
-  images = ["PrivateCloud.png", "Rackspace_Cloud_Company.png", "Rackspace_Cloud_Company_Small.png", "alert_red.png", "body_bkg.gif", "selected_arrow.png"]
+  images = ["PrivateCloud.png", "Rackspace_Cloud_Company.png",
+    "Rackspace_Cloud_Company_Small.png", "alert_red.png", "body_bkg.gif",
+    "selected_arrow.png"]
   images.each do |imgname|
     # Register remote_file resource
     remote_file "#{node["horizon"]["dash_path"]}/static/dashboard/img/#{imgname}" do
