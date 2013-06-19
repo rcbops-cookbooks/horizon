@@ -119,7 +119,9 @@ template node["horizon"]["local_settings_path"] do
     :db_ipaddress => mysql_connect_ip,
     :keystone_api_ipaddress => ks_admin_endpoint["host"],
     :service_port => ks_service_endpoint["port"],
+    :service_protocol => ks_service_endpoint["scheme"],
     :admin_port => ks_admin_endpoint["port"],
+    :admin_protocol => ks_admin_endpoint["scheme"],
     :swift_enable => node["horizon"]["swift"]["enabled"]
   )
 end
