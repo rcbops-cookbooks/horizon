@@ -122,7 +122,8 @@ template node["horizon"]["local_settings_path"] do
     :service_protocol => ks_service_endpoint["scheme"],
     :admin_port => ks_admin_endpoint["port"],
     :admin_protocol => ks_admin_endpoint["scheme"],
-    :swift_enable => node["horizon"]["swift"]["enabled"]
+    :swift_enable => node["horizon"]["swift"]["enabled"],
+    :openstack_endpoint_type => node["horizon"]["endpoint_type"]
   )
 end
 

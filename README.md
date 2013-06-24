@@ -90,6 +90,8 @@ Attributes
 
 * `horizon["platform"]` - Hash of platform specific package/service names and options
 
+* `horizon["endpoint_type"]` - The endpoint type to use from the Keystone service catalog
+
 Templates
 =====
 
