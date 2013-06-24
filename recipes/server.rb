@@ -194,14 +194,14 @@ if platform?("debian","ubuntu") then
 elsif platform?("fedora") then
   apache_site "default" do
     enable false
-    notifies :run, resources(:execute => "restore-selinux-context"), :immediately
+    notifies :run, "execute[restore-selinux-context]", :immediately
   end
 end
 
 apache_site "openstack-dashboard" do
   enable true
-  notifies :run, resources(:execute => "restore-selinux-context"), :immediately
-  notifies :reload, resources(:service => "apache2"), :immediately
+  notifies :run, "execute[restore-selinux-context]", :immediately
+  notifies :reload, "service[apache2]", :immediately
 end
 
 execute "restore-selinux-context" do
@@ -259,6 +259,6 @@ end
     if File.exists?("#{node["horizon"]["dash_path"]}/static/dashboard/img/#{imgname}")
       headers "If-Modified-Since" => File.mtime("#{node["horizon"]["dash_path"]}/static/dashboard/img/#{imgname}").httpdate
     end
-    notifies :create, resources(:remote_file => "#{node["horizon"]["dash_path"]}/static/dashboard/img/#{imgname}"), :immediately
+    notifies :create, "remote_file[#{node["horizon"]["dash_path"]}/static/dashboard/img/#{imgname}]", :immediately
   end
 end
