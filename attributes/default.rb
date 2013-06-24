@@ -20,6 +20,9 @@ default["horizon"]["swift"]["enabled"] = "False"
 
 default["horizon"]["theme"] = "default"
 
+# The endpoint type to use from the Keystone service catalog
+default["horizon"]["endpoint_type"] = "internalURL"
+
 case node["platform"]
 when "fedora", "centos", "redhat", "amazon", "scientific"
   default["horizon"]["ssl"]["dir"] = "/etc/pki/tls"                                         # node_attribute
