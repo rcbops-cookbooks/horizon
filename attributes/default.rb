@@ -22,17 +22,6 @@ default["horizon"]["theme"] = "default"
 
 default["horizon"]["theme"]["Rackspace"]["image_url_base"] = "http://ef550cb0f0ed69a100c1-40806b80b9b0290f6d33c73b927ee053.r51.cf2.rackcdn.com"
 
-if node["horizon"]["theme"] == "Rackspace"
-  images = ["PrivateCloud.png", "Rackspace_Cloud_Company.png",
-    "Rackspace_Cloud_Company_Small.png", "alert_red.png", "body_bkg.gif",
-    "selected_arrow.png"]
-  images.each do |imgname|
-    # Register remote_file resource
-    remote_file "#{node["horizon"]["dash_path"]}/static/dashboard/img/#{imgname}" do
-      source "http://ef550cb0f0ed69a100c1-40806b80b9b0290f6d33c73b927ee053.r51.cf2.rackcdn.com/#{imgname}"
-      mode "0644"
-      action :create
-
 # The endpoint type to use from the Keystone service catalog
 default["horizon"]["endpoint_type"] = "internalURL"
 
