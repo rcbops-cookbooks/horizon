@@ -279,7 +279,7 @@ if node["horizon"]["theme"] == "Rackspace"
   images.each do |imgname|
     # Register remote_file resource
     remote_file "#{node["horizon"]["dash_path"]}/static/dashboard/img/#{imgname}" do
-      source "http://ef550cb0f0ed69a100c1-40806b80b9b0290f6d33c73b927ee053.r51.cf2.rackcdn.com/#{imgname}"
+      source "#{node["horizon"]["theme"]["Rackspace"]["image_url_base"]}/#{imgname}"
       mode "0644"
       action :create
     end
