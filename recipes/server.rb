@@ -49,7 +49,7 @@ end
 include_recipe "apache2"
 include_recipe "apache2::mod_wsgi"
 include_recipe "apache2::mod_rewrite"
-include_recipe "horizon::mod_ssl"
+include_recipe "osops-utils::mod_ssl"
 
 # now rewind the ports.conf template resource laid down by the
 # apache2::default recipe
