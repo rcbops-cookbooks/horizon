@@ -26,9 +26,10 @@ when "fedora", "centos", "redhat", "amazon", "scientific"
   default["horizon"]["local_settings_path"] = "/etc/openstack-dashboard/local_settings"     # node_attribute
   # TODO(shep) - Fedora does not generate self signed certs by default
   default["horizon"]["platform"] = {                                                   # node_attribute
-    "horizon_packages" => ["openstack-dashboard", "MySQL-python", "python-netaddr", "python-cinderclient",
+    "supporting_packages" => [ "MySQL-python",  "python-cinderclient",
                            "python-quantumclient", "python-keystoneclient", "python-glanceclient",
                            "python-novaclient"],
+    "horizon_packages" => ["openstack-dashboard", "python-netaddr"],
     "package_overrides" => ""
   }
   default["horizon"]["dash_path"] = "/usr/share/openstack-dashboard"      # node_attribute
@@ -38,9 +39,10 @@ when "ubuntu", "debian"
   default["horizon"]["ssl"]["dir"] = "/etc/ssl"                                             # node_attribute
   default["horizon"]["local_settings_path"] = "/etc/openstack-dashboard/local_settings.py"  # node_attribute
   default["horizon"]["platform"] = {                                                   # node_attribute
-    "horizon_packages" => ["lessc","openstack-dashboard", "python-mysqldb", "python-netaddr", "python-cinderclient",
+    "supporting_packages" => ["python-mysqldb", "python-cinderclient",
                            "python-quantumclient", "python-keystoneclient", "python-glanceclient",
                            "python-novaclient"],
+    "horizon_packages" => ["lessc","openstack-dashboard", "python-netaddr"], 
     "package_overrides" => "-o Dpkg::Options::='--force-confold' -o Dpkg::Options::='--force-confdef'"
   }
   default["horizon"]["dash_path"] = "/usr/share/openstack-dashboard/openstack_dashboard"      # node_attribute
