@@ -100,6 +100,10 @@ mysql_info = create_db_and_user(
 
 mysql_connect_ip = get_access_endpoint('mysql-master', 'mysql', 'db')["host"]
 
+platform_options["supporting_packages"].each do |pkg|
+  include_recipe "osops-utils::#{pkg}"
+end
+
 platform_options["horizon_packages"].each do |pkg|
   package pkg do
     action node["osops"]["do_package_upgrades"] == true ? :upgrade : :install
