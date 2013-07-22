@@ -49,7 +49,7 @@ end
 include_recipe "apache2"
 include_recipe "apache2::mod_wsgi"
 include_recipe "apache2::mod_rewrite"
-include_recipe "horizon::mod_ssl"
+include_recipe "osops-utils::mod_ssl"
 
 # now rewind the ports.conf template resource laid down by the
 # apache2::default recipe
@@ -99,6 +99,10 @@ mysql_info = create_db_and_user(
 )
 
 mysql_connect_ip = get_access_endpoint('mysql-master', 'mysql', 'db')["host"]
+
+platform_options["supporting_packages"].each do |pkg|
+  include_recipe "osops-utils::#{pkg}"
+end
 
 platform_options["horizon_packages"].each do |pkg|
   package pkg do
