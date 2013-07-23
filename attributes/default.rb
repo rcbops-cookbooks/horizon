@@ -34,7 +34,7 @@ when "fedora", "centos", "redhat", "amazon", "scientific"
     "supporting_packages" => ["MySQL-python", "python-cinderclient",
       "python-quantumclient", "python-keystoneclient", "python-glanceclient",
       "python-novaclient"],
-    "horizon_packages" => ["openstack-dashboard", "python-netaddr"],
+    "horizon_packages" => ["openstack-dashboard", "python-netaddr", "nodejs-less"],
     "package_overrides" => ""
   }
   default["horizon"]["dash_path"] = "/usr/share/openstack-dashboard"

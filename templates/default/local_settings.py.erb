@@ -18,10 +18,6 @@ WEBROOT = '/'
 LOGIN_URL = ''.join((WEBROOT, 'auth/login/'))
 LOGOUT_URL = ''.join((WEBROOT, 'auth/logout/'))
 LOGIN_REDIRECT_URL = WEBROOT
-
-# oh noes... disabled compressed CSS on EPEL based systems until node
-# tools are packaged properly...  
-COMPRESS_ENABLED = False
 <% end %>
 
 # Set SSL proxy settings:
