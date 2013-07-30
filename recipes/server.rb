@@ -176,6 +176,20 @@ file "#{node["apache"]["dir"]}/conf.d/openstack-dashboard.conf" do
   backup false
 end
 
+# Allow us to override the default cert location.
+
+unless node["horizon"]["ssl"].attribute?"cert_override"
+  cert_location = "#{node["horizon"]["ssl"]["dir"]}/certs/#{node["horizon"]["ssl"]["cert"]}"
+else
+  cert_location = node["horizon"]["ssl"]["cert_override"]
+end
+
+unless node["horizon"]["ssl"].attribute?"key_override"
+  key_location = "#{node["horizon"]["ssl"]["dir"]}/private/#{node["horizon"]["ssl"]["key"]}"
+else
+  key_location = node["horizon"]["ssl"]["key_override"]
+end
+
 # TODO(breu): verify this for fedora
 template value_for_platform(
   ["ubuntu", "debian", "fedora"] => {
@@ -198,8 +212,8 @@ template value_for_platform(
     variables(
       :use_ssl => node["horizon"]["use_ssl"],
       :apache_contact => node["apache"]["contact"],
-      :ssl_cert_file => "#{node["horizon"]["ssl"]["dir"]}/certs/#{node["horizon"]["ssl"]["cert"]}",
-      :ssl_key_file => "#{node["horizon"]["ssl"]["dir"]}/private/#{node["horizon"]["ssl"]["key"]}",
+      :ssl_cert_file => cert_location,
+      :ssl_key_file => key_location,
       :apache_log_dir => node["apache"]["log_dir"],
       :django_wsgi_path => node["horizon"]["wsgi_path"],
       :dash_path => node["horizon"]["dash_path"],

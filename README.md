@@ -73,6 +73,8 @@ Attributes
 * `horizon["use_ssl"]` - toggle for using ssl with dashboard (default true)
 * `horizon["ssl"]["cert"]` - name to use when creating the ssl certificate
 * `horizon["ssl"]["key"]` - name to use when creating the ssl key
+* `horizon["ssl"]["cert_override"]` - location for custom Cert file
+* `horizon["ssl"]["key_override"]` - location for custom Key file
 
 * `horizon["services"]["dash"]["scheme"]` - defaults to http
 * `horizon["services"]["dash"]["network"]` - `osops_networks` network name which service operates on
