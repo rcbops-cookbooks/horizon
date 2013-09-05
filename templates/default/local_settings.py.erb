@@ -124,7 +124,7 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 OPENSTACK_HOST = "<%= @keystone_api_ipaddress %>"
 OPENSTACK_KEYSTONE_URL = "<%= @service_protocol %>://%s:<%= @service_port %>/v2.0" % OPENSTACK_HOST
 #OPENSTACK_KEYSTONE_ADMIN_URL = "<%= @admin_protocol %>://%s:<%= @admin_port %>/v2.0" % OPENSTACK_HOST
-OPENSTACK_KEYSTONE_DEFAULT_ROLE = "Member"
+OPENSTACK_KEYSTONE_DEFAULT_ROLE = "_member_"
 
 # Disable SSL certificate checks (useful for self-signed certificates):
 # OPENSTACK_SSL_NO_VERIFY = True
