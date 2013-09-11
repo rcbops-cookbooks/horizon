@@ -27,10 +27,12 @@ LOGIN_REDIRECT_URL = WEBROOT
 # https://docs.djangoproject.com/en/1.4/ref/settings/#secure-proxy-ssl-header
 # SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTOCOL', 'https')
 
-# If Horizon is being served through SSL, then uncomment the following two
+# If Horizon is being served through SSL, then add the following two
 # settings to better secure the cookies from security exploits
-#CSRF_COOKIE_SECURE = True
-#SESSION_COOKIE_SECURE = True
+<% if @service_protocol == "https" -%>
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
+<% end %>
 
 # Specify a regular expression to validate user passwords.
 # HORIZON_CONFIG = {
@@ -81,7 +83,10 @@ LOCAL_PATH = os.path.dirname(os.path.abspath(__file__))
 # requests routed to the same dashboard instance or you set the same SECRET_KEY
 # for all of them.
 # from horizon.utils import secret_key
-# SECRET_KEY = secret_key.generate_or_read_from_file(os.path.join(LOCAL_PATH, '.secret_key_store'))
+
+# Kevin Carter Added in for Havana as it is required.
+
+SECRET_KEY = 'secret'
 
 # We recommend you use memcached for development; otherwise after every reload
 # of the django development server, you will have to login again. To use
@@ -121,7 +126,7 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 OPENSTACK_HOST = "<%= @keystone_api_ipaddress %>"
 OPENSTACK_KEYSTONE_URL = "<%= @service_protocol %>://%s:<%= @service_port %>/v2.0" % OPENSTACK_HOST
 #OPENSTACK_KEYSTONE_ADMIN_URL = "<%= @admin_protocol %>://%s:<%= @admin_port %>/v2.0" % OPENSTACK_HOST
-OPENSTACK_KEYSTONE_DEFAULT_ROLE = "Member"
+OPENSTACK_KEYSTONE_DEFAULT_ROLE = "_member_"
 
 # Disable SSL certificate checks (useful for self-signed certificates):
 # OPENSTACK_SSL_NO_VERIFY = True
