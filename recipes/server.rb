@@ -129,9 +129,9 @@ if ["on", "off"].include? node["horizon"]["password_autocomplete"].downcase
   password_autocomplete = node["horizon"]["password_autocomplete"].downcase
 else
   # attr validation failed. set to off
-  Chef::Log.warn("Current package[horizon-server]: password_autocomplete attribute supplied as"\
-                 "#{node["horizon"]["password_autocomplete"]}"\
-                 "Value must be set to \"off\" or \"on\","\
+  Chef::Log.warn("Current package[horizon-server]: password_autocomplete attribute supplied as, "\
+                 << node["horizon"]["password_autocomplete"]\
+                 << " Value must be set to \"off\" or \"on\","\
                  " setting attribute to off")
   password_autocomplete = "off"
 end
