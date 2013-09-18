@@ -19,6 +19,7 @@ default["horizon"]["services"]["dash_ssl"]["path"] = "/"
 default["horizon"]["swift"]["enabled"] = "False"
 
 default["horizon"]["theme"] = "default"
+default["horizon"]["help_url"] = "http://docs.openstack.org"
 
 default["horizon"]["theme_image_base"] = "http://ef550cb0f0ed69a100c1-40806b80b9b0290f6d33c73b927ee053.r51.cf2.rackcdn.com"
 
