@@ -139,8 +139,11 @@ template node["horizon"]["local_settings_path"] do
     :admin_port => ks_admin_endpoint["port"],
     :admin_protocol => ks_admin_endpoint["scheme"],
     :swift_enable => node["horizon"]["swift"]["enabled"],
-    :openstack_endpoint_type => node["horizon"]["endpoint_type"]
+    :openstack_endpoint_type => node["horizon"]["endpoint_type"],
+    :help_url => node["horizon"]["help_url"] 
   )
+  notifies :run, "execute[restore-selinux-context]", :immediately
+  notifies :reload, "service[apache2]", :immediately
 end
 
 # FIXME: this shouldn't run every chef run
@@ -259,8 +262,6 @@ end
 
 apache_site "openstack-dashboard" do
   enable true
-  notifies :run, "execute[restore-selinux-context]", :immediately
-  notifies :reload, "service[apache2]", :immediately
 end
 
 execute "restore-selinux-context" do
