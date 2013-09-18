@@ -86,6 +86,7 @@ end
 
 ks_admin_endpoint = get_access_endpoint("keystone-api", "keystone", "admin-api")
 ks_service_endpoint = get_access_endpoint("keystone-api", "keystone", "service-api")
+ks_internal_endpoint = get_access_endpoint("keystone-api", "keystone", "internal-api")
 keystone = get_settings_by_role("keystone-setup", "keystone")
 
 #creates db and user
@@ -110,6 +111,17 @@ platform_options["horizon_packages"].each do |pkg|
     options platform_options["package_overrides"]
   end
 end
+# If internal and service URI's are on same host and either is set for SSL
+# Set the service proto to SSL
+if ks_internal_endpoint["host"] == ks_service_endpoint["host"]
+  if [ks_internal_endpoint["scheme"],ks_service_endpoint["scheme"]].any?{|proto|
+      proto == "https"
+    }
+    service_protocol = "https"
+  else
+    service_protocol = ks_service_endpoint["scheme"]
+  end
+end
 
 template node["horizon"]["local_settings_path"] do
   source "local_settings.py.erb"
@@ -123,7 +135,7 @@ template node["horizon"]["local_settings_path"] do
     :db_ipaddress => mysql_connect_ip,
     :keystone_api_ipaddress => ks_admin_endpoint["host"],
     :service_port => ks_service_endpoint["port"],
-    :service_protocol => ks_service_endpoint["scheme"],
+    :service_protocol => service_protocol,
     :admin_port => ks_admin_endpoint["port"],
     :admin_protocol => ks_admin_endpoint["scheme"],
     :swift_enable => node["horizon"]["swift"]["enabled"],
