@@ -29,7 +29,7 @@ LOGIN_REDIRECT_URL = WEBROOT
 
 # If Horizon is being served through SSL, then add the following two
 # settings to better secure the cookies from security exploits
-<% if @service_protocol == "https" -%>
+<% if [@service_protocol, @admin_protocol].any?{|proto| proto == "https" } -%>
 CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_SECURE = True
 <% end %>
@@ -127,7 +127,7 @@ OPENSTACK_KEYSTONE_DEFAULT_ROLE = "_member_"
 
 # Disable SSL certificate checks (useful for self-signed certificates):
 # OPENSTACK_SSL_NO_VERIFY = True
-<% if @service_protocol == "https" -%>
+<% if [@service_protocol, @admin_protocol].any?{|proto| proto == "https" } -%>
 OPENSTACK_SSL_NO_VERIFY = True
 <% end %>
 
