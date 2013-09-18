@@ -122,6 +122,19 @@ if ks_internal_endpoint["host"] == ks_service_endpoint["host"]
     service_protocol = ks_service_endpoint["scheme"]
   end
 end
+#Verify if password_autocomplete attr is set to either on or off
+# If neither it will default to off
+if ["on", "off"].include? node["horizon"]["password_autocomplete"].downcase
+  #attr validated; set to what was supplied
+  password_autocomplete = node["horizon"]["password_autocomplete"].downcase
+else
+  # attr validation failed. set to off
+  Chef::Log.warn("Current package[horizon-server]: password_autocomplete attribute supplied as, "\
+                 << node["horizon"]["password_autocomplete"]\
+                 << " Value must be set to \"off\" or \"on\","\
+                 " setting attribute to off")
+  password_autocomplete = "off"
+end
 
 template node["horizon"]["local_settings_path"] do
   source "local_settings.py.erb"
@@ -140,7 +153,8 @@ template node["horizon"]["local_settings_path"] do
     :admin_protocol => ks_admin_endpoint["scheme"],
     :swift_enable => node["horizon"]["swift"]["enabled"],
     :openstack_endpoint_type => node["horizon"]["endpoint_type"],
-    :help_url => node["horizon"]["help_url"] 
+    :help_url => node["horizon"]["help_url"] ,
+    :password_autocomplete => password_autocomplete
   )
   notifies :run, "execute[restore-selinux-context]", :immediately
   notifies :reload, "service[apache2]", :immediately
