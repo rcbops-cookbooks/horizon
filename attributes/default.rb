@@ -47,12 +47,17 @@ when "ubuntu", "debian"
   default["horizon"]["ssl"]["dir"] = "/etc/ssl"
   default["horizon"]["local_settings_path"] = "/etc/openstack-dashboard/local_settings.py"
   default["horizon"]["platform"] = {
-    "supporting_packages" => ["python-mysqldb", "python-cinderclient",
-      "python-quantumclient", "python-keystoneclient", "python-glanceclient",
-      "python-novaclient"],
-    "horizon_packages" => ["lessc", "openstack-dashboard", "python-netaddr"],
+    "supporting_packages" => ["python-mysqldb", "python-cinderclient", "python-quantumclient", "python-keystoneclient", "python-glanceclient", "python-novaclient"],
+    "horizon_packages" => ["openstack-dashboard", "python-netaddr"],
     "package_overrides" => "-o Dpkg::Options::='--force-confold' -o Dpkg::Options::='--force-confdef'"
   }
+  # Added by Kevin Carter was related to upstream package renaming by ubuntu.
+  if node[:platform] == "ubuntu" && node[:platform_version].to_f >= 13.04
+      default["horizon"]["platform"]["horizon_packages"] << "node-less"
+  else
+      default["horizon"]["platform"]["horizon_packages"] << "lessc"
+  end
+  
   default["horizon"]["dash_path"] = "/usr/share/openstack-dashboard/openstack_dashboard"
   default["horizon"]["stylesheet_path"] =
     "/usr/share/openstack-dashboard/openstack_dashboard/templates/_stylesheets.html"
