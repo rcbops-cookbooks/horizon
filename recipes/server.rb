@@ -156,7 +156,6 @@ template node["horizon"]["local_settings_path"] do
     :help_url => node["horizon"]["help_url"] ,
     :password_autocomplete => password_autocomplete
   )
-  notifies :run, "execute[restore-selinux-context]", :immediately
   notifies :reload, "service[apache2]", :immediately
 end
 
@@ -174,7 +173,6 @@ cookbook_file "#{node["horizon"]["ssl"]["dir"]}/certs/#{node["horizon"]["ssl"]["
   mode 0644
   owner "root"
   group "root"
-  notifies :run, "execute[restore-selinux-context]", :immediately
 end
 
 case node["platform"]
@@ -189,7 +187,6 @@ cookbook_file "#{node["horizon"]["ssl"]["dir"]}/private/#{node["horizon"]["ssl"]
   mode 0640
   owner "root"
   group grp # Don't know about fedora
-  notifies :run, "execute[restore-selinux-context]", :immediately
 end
 
 # stop apache bitching
@@ -252,7 +249,6 @@ template value_for_platform(
       :https_port => node["horizon"]["services"]["dash_ssl"]["port"],
       :listen_ip => listen_ip
     )
-    notifies :run, "execute[restore-selinux-context]", :immediately
     notifies :reload, "service[apache2]", :immediately
   end
 
@@ -270,18 +266,11 @@ if platform?("debian", "ubuntu") then
 elsif platform?("fedora") then
   apache_site "default" do
     enable false
-    notifies :run, "execute[restore-selinux-context]", :immediately
   end
 end
 
 apache_site "openstack-dashboard" do
   enable true
-end
-
-execute "restore-selinux-context" do
-  command "restorecon -Rv /etc/httpd /etc/pki; chcon -R -t httpd_sys_content_t /usr/share/openstack-dashboard || :"
-  action :nothing
-  only_if { platform?("fedora") }
 end
 
 # TODO(shep)
