@@ -101,6 +101,32 @@ mysql_info = create_db_and_user(
 
 mysql_connect_ip = get_access_endpoint('mysql-master', 'mysql', 'db')["host"]
 
+
+# TODO(Kevin) REMOVE THIS WHEN THE PACKAGE "lesscpy" EXISTS IN PRECISE
+case node["platform"]
+when "ubuntu"
+  include_recipe "apt"
+
+  # Add the Temp Repo we need
+  apt_repository "SaucyUniversal" do
+    uri "http://ubuntu.mirror.cambrium.nl/ubuntu/"
+    distribution "saucy"
+    components ["main universe"]
+  end
+  
+  # Install Lesscpy
+  package "python3-lesscpy" do
+    options platform_options["package_overrides"]
+    action :install
+  end
+
+  # Remove the temp repo so things don't explode
+  apt_repository "SaucyUniversal" do
+    action :remove
+  end
+end
+
+
 platform_options["supporting_packages"].each do |pkg|
   include_recipe "osops-utils::#{pkg}"
 end
@@ -157,6 +183,12 @@ template node["horizon"]["local_settings_path"] do
     :password_autocomplete => password_autocomplete
   )
   notifies :reload, "service[apache2]", :immediately
+end
+
+directory node["horizon"]['settings_dir'] do
+  owner 'horizon'
+  group 'horizon'
+  mode '775'
 end
 
 # FIXME: this shouldn't run every chef run
