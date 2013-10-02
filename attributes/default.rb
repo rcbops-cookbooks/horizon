@@ -50,7 +50,7 @@ when "ubuntu", "debian"
     "supporting_packages" => ["python-mysqldb", "python-cinderclient",
       "python-quantumclient", "python-keystoneclient", "python-glanceclient",
       "python-novaclient"],
-    "horizon_packages" => ["lessc", "openstack-dashboard", "python-netaddr"],
+    "horizon_packages" => ["openstack-dashboard", "python-netaddr", "node-less"],
     "package_overrides" => "-o Dpkg::Options::='--force-confold' -o Dpkg::Options::='--force-confdef'"
   }
   default["horizon"]["dash_path"] = "/usr/share/openstack-dashboard/openstack_dashboard"

@@ -243,7 +243,10 @@ template value_for_platform(
       :apache_log_dir => node["apache"]["log_dir"],
       :django_wsgi_path => node["horizon"]["wsgi_path"],
       :dash_path => node["horizon"]["dash_path"],
-      :wsgi_user => node["apache"]["user"],
+      :wsgi_user => value_for_platform(  
+        ["ubuntu", "debian"] => {"default" => "horizon"},
+        ["redhat", "centos", "fedora"] => {"default" => "#{node["apache"]["user"]}"}
+      ),
       :wsgi_group => node["apache"]["group"],
       :http_port => node["horizon"]["services"]["dash"]["port"],
       :https_port => node["horizon"]["services"]["dash_ssl"]["port"],
