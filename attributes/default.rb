@@ -30,6 +30,7 @@ default["horizon"]["endpoint_type"] = "internalURL"
 case node["platform"]
 when "fedora", "centos", "redhat", "amazon", "scientific"
   default["horizon"]["ssl"]["dir"] = "/etc/pki/tls"
+  default["horizon"]["settings_dir"] = "/etc/openstack-dashboard"
   default["horizon"]["local_settings_path"] = "/etc/openstack-dashboard/local_settings"
   # TODO(shep) - Fedora does not generate self signed certs by default
   default["horizon"]["platform"] = {
@@ -45,6 +46,7 @@ when "fedora", "centos", "redhat", "amazon", "scientific"
   default["horizon"]["wsgi_path"] = node["horizon"]["dash_path"] + "/openstack_dashboard/wsgi"
 when "ubuntu", "debian"
   default["horizon"]["ssl"]["dir"] = "/etc/ssl"
+  default["horizon"]["settings_dir"] = "/etc/openstack-dashboard"
   default["horizon"]["local_settings_path"] = "/etc/openstack-dashboard/local_settings.py"
   default["horizon"]["platform"] = {
     "supporting_packages" => ["python-mysqldb", "python-cinderclient",
