@@ -34,14 +34,6 @@ CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_SECURE = True
 <% end %>
 
-# Specify a regular expression to validate user passwords.
-# HORIZON_CONFIG = {
-#     "password_validator": {
-#         "regex": '.*',
-#         "help_text": _("Your password does not meet the requirements.")
-#     },
-#    'help_url': "http://docs.openstack.org"
-# }
 HORIZON_CONFIG = {
     'dashboards': ('project', 'admin', 'settings',),
     'default_dashboard': 'project',
@@ -152,7 +144,7 @@ OPENSTACK_NEUTRON_NETWORK = {
     #'profile_support': 'cisco',
 }
 
-# Configure quantum connection details for networking
+# Configure Neutron connection details for networking
 NEUTRON_ENABLED = False
 NEUTRON_URL = '%s'  % OPENSTACK_HOST
 NEUTRON_PORT = '9696'
