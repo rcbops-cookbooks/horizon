@@ -25,6 +25,8 @@
 #             configuration file(s) and not change the selinux mode
 #
 
+::Chef::Recipe.send(:include, Opscode::OpenSSL::Password)
+
 chef_gem "chef-rewind"
 require 'chef/rewind'
 
@@ -101,6 +103,16 @@ mysql_info = create_db_and_user(
 
 mysql_connect_ip = get_access_endpoint('mysql-master', 'mysql', 'db')["host"]
 
+platform_options["supporting_packages"].each do |pkg|
+  include_recipe "osops-utils::#{pkg}"
+end
+
+platform_options["horizon_packages"].each do |pkg|
+  package pkg do
+    action node["osops"]["do_package_upgrades"] == true ? :upgrade : :install
+    options platform_options["package_overrides"]
+  end
+end
 
 # TODO(Kevin) REMOVE THIS WHEN THE PACKAGE "lesscpy" EXISTS IN PRECISE
 case node["platform"]
@@ -126,17 +138,6 @@ when "ubuntu"
   end
 end
 
-
-platform_options["supporting_packages"].each do |pkg|
-  include_recipe "osops-utils::#{pkg}"
-end
-
-platform_options["horizon_packages"].each do |pkg|
-  package pkg do
-    action node["osops"]["do_package_upgrades"] == true ? :upgrade : :install
-    options platform_options["package_overrides"]
-  end
-end
 # If internal and service URI's are on same host and either is set for SSL
 # Set the service proto to SSL
 if ks_internal_endpoint["host"] == ks_service_endpoint["host"]
@@ -148,6 +149,7 @@ if ks_internal_endpoint["host"] == ks_service_endpoint["host"]
     service_protocol = ks_service_endpoint["scheme"]
   end
 end
+
 #Verify if password_autocomplete attr is set to either on or off
 # If neither it will default to off
 if ["on", "off"].include? node["horizon"]["password_autocomplete"].downcase
@@ -168,6 +170,7 @@ template node["horizon"]["local_settings_path"] do
   group "root"
   mode "0644"
   variables(
+    :secret_key => node["horizon"]["secret_key"],
     :user => node["horizon"]["db"]["username"],
     :passwd => node["horizon"]["db"]["password"],
     :db_name => node["horizon"]["db"]["name"],
@@ -185,12 +188,6 @@ template node["horizon"]["local_settings_path"] do
   notifies :reload, "service[apache2]", :immediately
 end
 
-directory node["horizon"]['settings_dir'] do
-  owner 'horizon'
-  group 'horizon'
-  mode '775'
-end
-
 # FIXME: this shouldn't run every chef run
 execute "openstack-dashboard syncdb" do
   cwd "/usr/share/openstack-dashboard"
@@ -198,6 +195,25 @@ execute "openstack-dashboard syncdb" do
   command "python manage.py syncdb --noinput"
   action :run
   # not_if "/usr/bin/mysql -u root -e 'describe #{node["dash"]["db"]}.django_content_type'"
+end
+
+# Set a node attribute for the Horizon User.
+node.set_unless["horizon"]["horizon_user"] = value_for_platform(
+  ["ubuntu", "debian"] => {"default" => "horizon"},
+  ["redhat", "centos", "fedora"] => {"default" => "#{node["apache"]["user"]}"}
+)
+
+# Set a node attribute for the horizon secrete Key
+node.set_unless["horizon"]["horizon_key"] = secure_password
+
+# Lay down the secret key for Horizon
+template node["horizon"]["secret_key"] do
+  source "secret_key.erb"
+  owner node["horizon"]["horizon_user"]
+  group "root"
+  mode "0600"
+  variables(:key_set => node["horizon"]["horizon_key"])
+  notifies :restart, "service[apache2]", :immediately
 end
 
 cookbook_file "#{node["horizon"]["ssl"]["dir"]}/certs/#{node["horizon"]["ssl"]["cert"]}" do
@@ -235,7 +251,6 @@ file "#{node["apache"]["dir"]}/conf.d/openstack-dashboard.conf" do
 end
 
 # Allow us to override the default cert location.
-
 unless node["horizon"]["ssl"].attribute?"cert_override"
   cert_location = "#{node["horizon"]["ssl"]["dir"]}/certs/#{node["horizon"]["ssl"]["cert"]}"
 else
@@ -275,10 +290,7 @@ template value_for_platform(
       :apache_log_dir => node["apache"]["log_dir"],
       :django_wsgi_path => node["horizon"]["wsgi_path"],
       :dash_path => node["horizon"]["dash_path"],
-      :wsgi_user => value_for_platform(  
-        ["ubuntu", "debian"] => {"default" => "horizon"},
-        ["redhat", "centos", "fedora"] => {"default" => "#{node["apache"]["user"]}"}
-      ),
+      :wsgi_user => node["horizon"]["horizon_user"],
       :wsgi_group => node["apache"]["group"],
       :http_port => node["horizon"]["services"]["dash"]["port"],
       :https_port => node["horizon"]["services"]["dash_ssl"]["port"],
@@ -320,37 +332,9 @@ directory "/var/www/.novaclient" do
   action :create
 end
 
-cookbook_file "#{node["horizon"]["dash_path"]}/static/dashboard/css/folsom.css" do
-  only_if { node["horizon"]["theme"] }
-  source "css/folsom.css"
-  mode 0644
-  owner "root"
-  group grp
-end
-
 template node["horizon"]["stylesheet_path"] do
-  if node["horizon"]["theme"] == "Rackspace"
-    source "rs_stylesheets.html.erb"
-  else
-    source "default_stylesheets.html.erb"
-  end
+  source "default_stylesheets.html.erb"
   mode 0644
   owner "root"
   group grp
-end
-
-# NOTE(mancdaz): check in on http://tickets.opscode.com/browse/CHEF-3949
-# and one day we might be able to use etags cleanly
-if node["horizon"]["theme"] == "Rackspace"
-  images = ["PrivateCloud.png", "Rackspace_Cloud_Company.png",
-    "Rackspace_Cloud_Company_Small.png", "alert_red.png", "body_bkg.gif",
-    "selected_arrow.png"]
-  images.each do |imgname|
-    # Register remote_file resource
-    remote_file "#{node["horizon"]["dash_path"]}/static/dashboard/img/#{imgname}" do
-      source "#{node["horizon"]["theme_image_base"]}/#{imgname}"
-      mode "0644"
-      action :create
-    end
-  end
 end
