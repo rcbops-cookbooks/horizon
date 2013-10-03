@@ -115,6 +115,7 @@ platform_options["horizon_packages"].each do |pkg|
 end
 
 # TODO(Kevin) REMOVE THIS WHEN THE PACKAGE "lesscpy" EXISTS IN PRECISE
+Chef::Log.info("Running a DIRTY hack to get python-lesscpy package installed.")
 case node["platform"]
 when "ubuntu"
   include_recipe "apt"
