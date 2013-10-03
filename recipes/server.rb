@@ -146,6 +146,7 @@ template node["horizon"]["local_settings_path"] do
     :passwd => node["horizon"]["db"]["password"],
     :db_name => node["horizon"]["db"]["name"],
     :db_ipaddress => mysql_connect_ip,
+    :use_ssl => node["horizon"]["use_ssl"],
     :keystone_api_ipaddress => ks_admin_endpoint["host"],
     :service_port => ks_service_endpoint["port"],
     :service_protocol => service_protocol,
