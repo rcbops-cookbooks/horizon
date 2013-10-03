@@ -127,7 +127,7 @@ when "ubuntu"
   end
   
   # Install Lesscpy
-  package "python3-lesscpy" do
+  package "python-lesscpy" do
     options platform_options["package_overrides"]
     action :install
   end
