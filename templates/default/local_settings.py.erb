@@ -29,9 +29,12 @@ LOGIN_REDIRECT_URL = WEBROOT
 
 # If Horizon is being served through SSL, then add the following two
 # settings to better secure the cookies from security exploits
-<% if [@service_protocol, @admin_protocol].any?{|proto| proto == "https" } -%>
+<% if @use_ssl -%>
 CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_SECURE = True
+<% else %>
+#CSRF_COOKIE_SECURE = True
+#SESSION_COOKIE_SECURE = True
 <% end %>
 
 # Specify a regular expression to validate user passwords.
