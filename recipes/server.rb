@@ -121,7 +121,7 @@ when "ubuntu"
   include_recipe "apt"
 
   # Add the Temp Repo we need
-  apt_repository "SaucyUniversal" do
+  apt_repository "HorizonSaucyUniversal" do
     uri "http://ubuntu.mirror.cambrium.nl/ubuntu/"
     distribution "saucy"
     components ["main universe"]
@@ -130,12 +130,13 @@ when "ubuntu"
   # Install Lesscpy
   package "python-lesscpy" do
     options platform_options["package_overrides"]
-    action :install
+    action :upgrade
   end
 
   # Remove the temp repo so things don't explode
-  apt_repository "SaucyUniversal" do
+  apt_repository "HorizonSaucyUniversal" do
     action :remove
+    notifies :run, "execute[apt-get update]", :immediately
   end
 end
 
