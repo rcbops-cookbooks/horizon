@@ -114,29 +114,13 @@ platform_options["horizon_packages"].each do |pkg|
   end
 end
 
-# TODO(Kevin) REMOVE THIS WHEN THE PACKAGE "lesscpy" EXISTS IN PRECISE
-Chef::Log.info("Running a DIRTY hack to get python-lesscpy package installed.")
+# TODO(breu) verify this on RPM install
 case node["platform"]
 when "ubuntu"
-  include_recipe "apt"
-
-  # Add the Temp Repo we need
-  apt_repository "HorizonSaucyUniversal" do
-    uri "http://ubuntu.mirror.cambrium.nl/ubuntu/"
-    distribution "saucy"
-    components ["main universe"]
-  end
-  
   # Install Lesscpy
   package "python-lesscpy" do
     options platform_options["package_overrides"]
     action :upgrade
-  end
-
-  # Remove the temp repo so things don't explode
-  apt_repository "HorizonSaucyUniversal" do
-    action :remove
-    notifies :run, "execute[apt-get update]", :immediately
   end
 end
 
