@@ -25,6 +25,8 @@
 #             configuration file(s) and not change the selinux mode
 #
 
+::Chef::Recipe.send(:include, Opscode::OpenSSL::Password)
+
 chef_gem "chef-rewind"
 require 'chef/rewind'
 
@@ -111,6 +113,33 @@ platform_options["horizon_packages"].each do |pkg|
     options platform_options["package_overrides"]
   end
 end
+
+# TODO(Kevin) REMOVE THIS WHEN THE PACKAGE "lesscpy" EXISTS IN PRECISE
+Chef::Log.info("Running a DIRTY hack to get python-lesscpy package installed.")
+case node["platform"]
+when "ubuntu"
+  include_recipe "apt"
+
+  # Add the Temp Repo we need
+  apt_repository "HorizonSaucyUniversal" do
+    uri "http://ubuntu.mirror.cambrium.nl/ubuntu/"
+    distribution "saucy"
+    components ["main universe"]
+  end
+  
+  # Install Lesscpy
+  package "python-lesscpy" do
+    options platform_options["package_overrides"]
+    action :upgrade
+  end
+
+  # Remove the temp repo so things don't explode
+  apt_repository "HorizonSaucyUniversal" do
+    action :remove
+    notifies :run, "execute[apt-get update]", :immediately
+  end
+end
+
 # If internal and service URI's are on same host and either is set for SSL
 # Set the service proto to SSL
 if ks_internal_endpoint["host"] == ks_service_endpoint["host"]
@@ -122,6 +151,7 @@ if ks_internal_endpoint["host"] == ks_service_endpoint["host"]
     service_protocol = ks_service_endpoint["scheme"]
   end
 end
+
 #Verify if password_autocomplete attr is set to either on or off
 # If neither it will default to off
 if ["on", "off"].include? node["horizon"]["password_autocomplete"].downcase
@@ -142,6 +172,7 @@ template node["horizon"]["local_settings_path"] do
   group "root"
   mode "0644"
   variables(
+    :secret_key => node["horizon"]["secret_key"],
     :user => node["horizon"]["db"]["username"],
     :passwd => node["horizon"]["db"]["password"],
     :db_name => node["horizon"]["db"]["name"],
@@ -156,7 +187,6 @@ template node["horizon"]["local_settings_path"] do
     :help_url => node["horizon"]["help_url"] ,
     :password_autocomplete => password_autocomplete
   )
-  notifies :run, "execute[restore-selinux-context]", :immediately
   notifies :reload, "service[apache2]", :immediately
 end
 
@@ -169,12 +199,30 @@ execute "openstack-dashboard syncdb" do
   # not_if "/usr/bin/mysql -u root -e 'describe #{node["dash"]["db"]}.django_content_type'"
 end
 
+# Set a node attribute for the Horizon User.
+node.set_unless["horizon"]["horizon_user"] = value_for_platform(
+  ["ubuntu", "debian"] => {"default" => "horizon"},
+  ["redhat", "centos", "fedora"] => {"default" => "#{node["apache"]["user"]}"}
+)
+
+# Set a node attribute for the horizon secrete Key
+node.set_unless["horizon"]["horizon_key"] = secure_password
+
+# Lay down the secret key for Horizon
+template node["horizon"]["secret_key"] do
+  source "secret_key.erb"
+  owner node["horizon"]["horizon_user"]
+  group "root"
+  mode "0600"
+  variables(:key_set => node["horizon"]["horizon_key"])
+  notifies :restart, "service[apache2]", :immediately
+end
+
 cookbook_file "#{node["horizon"]["ssl"]["dir"]}/certs/#{node["horizon"]["ssl"]["cert"]}" do
   source "horizon.pem"
   mode 0644
   owner "root"
   group "root"
-  notifies :run, "execute[restore-selinux-context]", :immediately
 end
 
 case node["platform"]
@@ -189,7 +237,6 @@ cookbook_file "#{node["horizon"]["ssl"]["dir"]}/private/#{node["horizon"]["ssl"]
   mode 0640
   owner "root"
   group grp # Don't know about fedora
-  notifies :run, "execute[restore-selinux-context]", :immediately
 end
 
 # stop apache bitching
@@ -206,7 +253,6 @@ file "#{node["apache"]["dir"]}/conf.d/openstack-dashboard.conf" do
 end
 
 # Allow us to override the default cert location.
-
 unless node["horizon"]["ssl"].attribute?"cert_override"
   cert_location = "#{node["horizon"]["ssl"]["dir"]}/certs/#{node["horizon"]["ssl"]["cert"]}"
 else
@@ -246,13 +292,12 @@ template value_for_platform(
       :apache_log_dir => node["apache"]["log_dir"],
       :django_wsgi_path => node["horizon"]["wsgi_path"],
       :dash_path => node["horizon"]["dash_path"],
-      :wsgi_user => node["apache"]["user"],
+      :wsgi_user => node["horizon"]["horizon_user"],
       :wsgi_group => node["apache"]["group"],
       :http_port => node["horizon"]["services"]["dash"]["port"],
       :https_port => node["horizon"]["services"]["dash_ssl"]["port"],
       :listen_ip => listen_ip
     )
-    notifies :run, "execute[restore-selinux-context]", :immediately
     notifies :reload, "service[apache2]", :immediately
   end
 
@@ -270,18 +315,11 @@ if platform?("debian", "ubuntu") then
 elsif platform?("fedora") then
   apache_site "default" do
     enable false
-    notifies :run, "execute[restore-selinux-context]", :immediately
   end
 end
 
 apache_site "openstack-dashboard" do
   enable true
-end
-
-execute "restore-selinux-context" do
-  command "restorecon -Rv /etc/httpd /etc/pki; chcon -R -t httpd_sys_content_t /usr/share/openstack-dashboard || :"
-  action :nothing
-  only_if { platform?("fedora") }
 end
 
 # TODO(shep)
@@ -296,37 +334,9 @@ directory "/var/www/.novaclient" do
   action :create
 end
 
-cookbook_file "#{node["horizon"]["dash_path"]}/static/dashboard/css/folsom.css" do
-  only_if { node["horizon"]["theme"] }
-  source "css/folsom.css"
-  mode 0644
-  owner "root"
-  group grp
-end
-
 template node["horizon"]["stylesheet_path"] do
-  if node["horizon"]["theme"] == "Rackspace"
-    source "rs_stylesheets.html.erb"
-  else
-    source "default_stylesheets.html.erb"
-  end
+  source "default_stylesheets.html.erb"
   mode 0644
   owner "root"
   group grp
-end
-
-# NOTE(mancdaz): check in on http://tickets.opscode.com/browse/CHEF-3949
-# and one day we might be able to use etags cleanly
-if node["horizon"]["theme"] == "Rackspace"
-  images = ["PrivateCloud.png", "Rackspace_Cloud_Company.png",
-    "Rackspace_Cloud_Company_Small.png", "alert_red.png", "body_bkg.gif",
-    "selected_arrow.png"]
-  images.each do |imgname|
-    # Register remote_file resource
-    remote_file "#{node["horizon"]["dash_path"]}/static/dashboard/img/#{imgname}" do
-      source "#{node["horizon"]["theme_image_base"]}/#{imgname}"
-      mode "0644"
-      action :create
-    end
-  end
 end

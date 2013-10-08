@@ -87,6 +87,8 @@ Attributes
 * `horizon["services"]["dash_ssl"]["port"]` - port to bind service to
 * `horizon["services"]["dash_ssl"]["path"]` - URI to use
 
+* `horizon["horizon_user"] - Set the name of the use that Horizon will use, Normally "Horizon"
+
 * `horizon["swift"]["enabled"]` - enable if swift endpoint is available
 
 * `horizon["theme"]` - which theme to use for the dashboard. Supports "default" or "Rackspace"

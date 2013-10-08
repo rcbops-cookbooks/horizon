@@ -34,14 +34,6 @@ CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_SECURE = True
 <% end %>
 
-# Specify a regular expression to validate user passwords.
-# HORIZON_CONFIG = {
-#     "password_validator": {
-#         "regex": '.*',
-#         "help_text": _("Your password does not meet the requirements.")
-#     },
-#    'help_url': "http://docs.openstack.org"
-# }
 HORIZON_CONFIG = {
     'dashboards': ('project', 'admin', 'settings',),
     'default_dashboard': 'project',
@@ -58,16 +50,6 @@ HORIZON_CONFIG = {
                    'unauthorized': exceptions.UNAUTHORIZED},
 }
 
-# Specify a regular expression to validate user passwords.
-# HORIZON_CONFIG["password_validator"] = {
-#     "regex": '.*',
-#     "help_text": _("Your password does not meet the requirements.")
-# }
-
-# Disable simplified floating IP address management for deployments with
-# multiple floating IP pools or complex network requirements.
-# HORIZON_CONFIG["simple_ip_management"] = False
-
 # Turn off browser autocompletion for the login form if so desired.
 HORIZON_CONFIG["password_autocomplete"] = "<%= @password_autocomplete %>"
 
@@ -82,11 +64,10 @@ LOCAL_PATH = os.path.dirname(os.path.abspath(__file__))
 # behind a load-balancer). Either you have to make sure that a session gets all
 # requests routed to the same dashboard instance or you set the same SECRET_KEY
 # for all of them.
-# from horizon.utils import secret_key
-
-# Kevin Carter Added in for Havana as it is required.
-
-SECRET_KEY = 'secret'
+from horizon.utils import secret_key
+SECRET_KEY = secret_key.generate_or_read_from_file(
+    os.path.realpath("<%= @secret_key %>")
+)
 
 # We recommend you use memcached for development; otherwise after every reload
 # of the django development server, you will have to login again. To use
@@ -104,12 +85,8 @@ CACHES = {
     }
 }
 
-SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
-
 # Send email to the console by default
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-# Or send them to /dev/null
-#EMAIL_BACKEND = 'django.core.mail.backends.dummy.EmailBackend'
 
 # Configure these for your outgoing email host
 # EMAIL_HOST = 'smtp.my-company.com'
@@ -125,11 +102,9 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 OPENSTACK_HOST = "<%= @keystone_api_ipaddress %>"
 OPENSTACK_KEYSTONE_URL = "<%= @service_protocol %>://%s:<%= @service_port %>/v2.0" % OPENSTACK_HOST
-#OPENSTACK_KEYSTONE_ADMIN_URL = "<%= @admin_protocol %>://%s:<%= @admin_port %>/v2.0" % OPENSTACK_HOST
-OPENSTACK_KEYSTONE_DEFAULT_ROLE = "_member_"
+OPENSTACK_KEYSTONE_DEFAULT_ROLE = "Member"
 
 # Disable SSL certificate checks (useful for self-signed certificates):
-# OPENSTACK_SSL_NO_VERIFY = True
 <% if [@service_protocol, @admin_protocol].any?{|proto| proto == "https" } -%>
 OPENSTACK_SSL_NO_VERIFY = True
 <% end %>
@@ -143,22 +118,37 @@ OPENSTACK_SSL_NO_VERIFY = True
 OPENSTACK_KEYSTONE_BACKEND = {
     'name': 'native',
     'can_edit_user': True,
-    'can_edit_project': True
+    'can_edit_group': True,
+    'can_edit_project': True,
+    'can_edit_domain': True,
+    'can_edit_role': True
 }
 
 OPENSTACK_HYPERVISOR_FEATURES = {
     'can_set_mount_point': True,
-    # NOTE: as of Grizzly this is not yet supported in Nova so enabling this
-    # setting will not do anything useful
-    'can_encrypt_volumes': False
 }
 
-# The OPENSTACK_QUANTUM_NETWORK settings can be used to enable optional
-# services provided by quantum.  Currently only the load balancer service
-# is available.
-OPENSTACK_QUANTUM_NETWORK = {
-    'enable_lb': False
+# The OPENSTACK_NEUTRON_NETWORK settings can be used to enable optional
+# services provided by neutron. Options currenly available are load
+# balancer service, security groups, quotas, VPN service.
+OPENSTACK_NEUTRON_NETWORK = {
+    'enable_lb': False,
+    'enable_firewall': False,
+    'enable_quotas': True,
+    'enable_vpn': False,
+    # The profile_support option is used to detect if an external router can be
+    # configured via the dashboard. When using specific plugins the
+    # profile_support can be turned on if needed.
+    'profile_support': None,
+    #'profile_support': 'cisco',
 }
+
+# Configure Neutron connection details for networking
+NEUTRON_ENABLED = False
+NEUTRON_URL = '%s'  % OPENSTACK_HOST
+NEUTRON_PORT = '9696'
+NEUTRON_TENANT = '1234'
+NEUTRON_CLIENT_VERSION='0.1'
 
 # OPENSTACK_ENDPOINT_TYPE specifies the endpoint type to use for the endpoints
 # in the Keystone service catalog. Use this setting when Horizon is running
@@ -176,59 +166,67 @@ API_RESULT_PAGE_SIZE = 20
 TIME_ZONE = "UTC"
 
 LOGGING = {
-        'version': 1,
-        # When set to True this will disable all logging except
-        # for loggers specified in this configuration dictionary. Note that
-        # if nothing is specified here and disable_existing_loggers is True,
-        # django.db.backends will still log unless it is disabled explicitly.
-        'disable_existing_loggers': False,
-        'handlers': {
-            'null': {
-                'level': 'DEBUG',
-                'class': 'django.utils.log.NullHandler',
-                },
-            'console': {
-                # Set the level to "DEBUG" for verbose output logging.
-                'level': 'INFO',
-                'class': 'logging.StreamHandler',
-                },
-            },
-        'loggers': {
-            # Logging from django.db.backends is VERY verbose, send to null
-            # by default.
-            'django.db.backends': {
-                'handlers': ['null'],
-                'propagate': False,
-                },
-            'requests': {
-                'handlers': ['null'],
-                'propagate': False,
-                },
-            'horizon': {
-                'handlers': ['console'],
-                'propagate': False,
-            },
-            'openstack_dashboard': {
-                'handlers': ['console'],
-                'propagate': False,
-            },
-            'novaclient': {
-                'handlers': ['console'],
-                'propagate': False,
-            },
-            'keystoneclient': {
-                'handlers': ['console'],
-                'propagate': False,
-            },
-            'glanceclient': {
-                'handlers': ['console'],
-                'propagate': False,
-            },
-            'nose.plugins.manager': {
-                'handlers': ['console'],
-                'propagate': False,
-            }
+    'version': 1,
+    # When set to True this will disable all logging except
+    # for loggers specified in this configuration dictionary. Note that
+    # if nothing is specified here and disable_existing_loggers is True,
+    # django.db.backends will still log unless it is disabled explicitly.
+    'disable_existing_loggers': False,
+    'handlers': {
+        'null': {
+            'level': 'DEBUG',
+            'class': 'django.utils.log.NullHandler',
+        },
+        'console': {
+            # Set the level to "DEBUG" for verbose output logging.
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        # Logging from django.db.backends is VERY verbose, send to null
+        # by default.
+        'django.db.backends': {
+            'handlers': ['null'],
+            'propagate': False,
+        },
+        'requests': {
+            'handlers': ['null'],
+            'propagate': False,
+        },
+        'horizon': {
+            'handlers': ['console'],
+            'propagate': False,
+        },
+        'openstack_dashboard': {
+            'handlers': ['console'],
+            'propagate': False,
+        },
+        'novaclient': {
+            'handlers': ['console'],
+            'propagate': False,
+        },
+        'cinderclient': {
+            'handlers': ['console'],
+            'propagate': False,
+        },
+        'keystoneclient': {
+            'handlers': ['console'],
+            'propagate': False,
+        },
+        'glanceclient': {
+            'handlers': ['console'],
+            'propagate': False,
+        },
+        'heatclient': {
+            'handlers': ['console'],
+            'propagate': False,
+        },
+        'nose.plugins.manager': {
+            'handlers': ['console'],
+            'propagate': False,
         }
+    }
 }
 
 DATABASES = {
@@ -244,13 +242,6 @@ DATABASES = {
 
 SWIFT_ENABLED = <%= @swift_enable %>
 SWIFT_PAGINATE_LIMIT = 100
-
-# Configure quantum connection details for networking
-QUANTUM_ENABLED = False
-QUANTUM_URL = '%s'  % OPENSTACK_HOST
-QUANTUM_PORT = '9696'
-QUANTUM_TENANT = '1234'
-QUANTUM_CLIENT_VERSION='0.1'
 
 # If you have external monitoring links
 # EXTERNAL_MONITORING = [
