@@ -24,6 +24,9 @@ default["horizon"]["password_autocomplete"] = "off"
 
 default["horizon"]["theme_image_base"] = "http://ef550cb0f0ed69a100c1-40806b80b9b0290f6d33c73b927ee053.r51.cf2.rackcdn.com"
 
+# domains that horizon accepts traffic to (http://myopenstackdashboard.com, for example)
+default["horizon"]["allowed_hosts"] = nil # set to an array of strings if you want to lock horizon down.
+
 # The endpoint type to use from the Keystone service catalog
 default["horizon"]["endpoint_type"] = "internalURL"
 
