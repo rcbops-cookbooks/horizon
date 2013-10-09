@@ -150,6 +150,8 @@ else
   password_autocomplete = "off"
 end
 
+for 
+
 template node["horizon"]["local_settings_path"] do
   source "local_settings.py.erb"
   owner "root"
@@ -170,7 +172,8 @@ template node["horizon"]["local_settings_path"] do
     :swift_enable => node["horizon"]["swift"]["enabled"],
     :openstack_endpoint_type => node["horizon"]["endpoint_type"],
     :help_url => node["horizon"]["help_url"] ,
-    :password_autocomplete => password_autocomplete
+    :password_autocomplete => password_autocomplete,
+    :allowed_hosts => node["horizon"]["allowed_hosts"] ? node["horizon"]["allowed_hosts"] : ["*"]
   )
   notifies :reload, "service[apache2]", :immediately
 end
