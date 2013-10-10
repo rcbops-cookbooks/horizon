@@ -150,8 +150,6 @@ else
   password_autocomplete = "off"
 end
 
-for 
-
 template node["horizon"]["local_settings_path"] do
   source "local_settings.py.erb"
   owner "root"
