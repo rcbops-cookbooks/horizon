@@ -24,8 +24,11 @@ default["horizon"]["password_autocomplete"] = "off"
 
 default["horizon"]["theme_image_base"] = "http://ef550cb0f0ed69a100c1-40806b80b9b0290f6d33c73b927ee053.r51.cf2.rackcdn.com"
 
-# The endpoint type to use from the Keystone service catalog
+# The Keystone endpoint details for Horizon to use
 default["horizon"]["endpoint_type"] = "internalURL"
+default["horizon"]["endpoint_host"] = nil
+default["horizon"]["endpoint_port"] = nil
+default["horizon"]["endpoint_scheme"] = nil
 
 case node["platform"]
 when "fedora", "centos", "redhat", "amazon", "scientific"

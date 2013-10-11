@@ -111,17 +111,23 @@ platform_options["horizon_packages"].each do |pkg|
     options platform_options["package_overrides"]
   end
 end
-# If internal and service URI's are on same host and either is set for SSL
-# Set the service proto to SSL
-if ks_internal_endpoint["host"] == ks_service_endpoint["host"]
-  if [ks_internal_endpoint["scheme"],ks_service_endpoint["scheme"]].any?{|proto|
+
+if node['horizon']['endpoint_scheme'].nil?
+  # If internal and service URI's are on same host and either is set for SSL
+  # Set the service proto to SSL
+  if ks_internal_endpoint["host"] == ks_service_endpoint["host"]
+    if [ks_internal_endpoint["scheme"],ks_service_endpoint["scheme"]].any?{|proto|
       proto == "https"
-    }
-    service_protocol = "https"
-  else
-    service_protocol = ks_service_endpoint["scheme"]
+      }
+      endpoint_scheme = "https"
+    else
+      endpoint_scheme = ks_service_endpoint["scheme"]
+    end
   end
+else
+  endpoint_scheme = node['horizon']['endpoint_scheme']
 end
+
 #Verify if password_autocomplete attr is set to either on or off
 # If neither it will default to off
 if ["on", "off"].include? node["horizon"]["password_autocomplete"].downcase
@@ -136,6 +142,18 @@ else
   password_autocomplete = "off"
 end
 
+if node['horizon']['endpoint_host'].nil?
+  endpoint_host = ks_service_endpoint["host"]
+else
+  endpoint_host = node['horizon']['endpoint_host']
+end
+
+if node["horizon"]["endpoint_port"].nil?
+  endpoint_port = ks_service_endpoint["port"]
+else
+  endpoint_port = node["horizon"]["endpoint_port"]
+end
+
 template node["horizon"]["local_settings_path"] do
   source "local_settings.py.erb"
   owner "root"
@@ -147,9 +165,9 @@ template node["horizon"]["local_settings_path"] do
     :db_name => node["horizon"]["db"]["name"],
     :db_ipaddress => mysql_connect_ip,
     :use_ssl => node["horizon"]["use_ssl"],
-    :keystone_api_ipaddress => ks_admin_endpoint["host"],
-    :service_port => ks_service_endpoint["port"],
-    :service_protocol => service_protocol,
+    :keystone_api_ipaddress => endpoint_host,
+    :service_port => endpoint_port,
+    :service_protocol => endpoint_scheme,
     :admin_port => ks_admin_endpoint["port"],
     :admin_protocol => ks_admin_endpoint["scheme"],
     :swift_enable => node["horizon"]["swift"]["enabled"],
