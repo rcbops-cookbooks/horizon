@@ -271,13 +271,6 @@ template value_for_platform(
     notifies :reload, "service[apache2]", :immediately
   end
 
-# ubuntu includes their own branding - we need to delete this until ubuntu makes this a
-# configurable paramter
-package "openstack-dashboard-ubuntu-theme" do
-  action :purge
-  only_if { platform?("ubuntu") }
-end
-
 if platform?("debian", "ubuntu") then
   apache_site "000-default" do
     enable false
@@ -304,37 +297,88 @@ directory "/var/www/.novaclient" do
   action :create
 end
 
-cookbook_file "#{node["horizon"]["dash_path"]}/static/dashboard/css/folsom.css" do
-  only_if { node["horizon"]["theme"] }
-  source "css/folsom.css"
-  mode 0644
-  owner "root"
-  group grp
-end
-
-template node["horizon"]["stylesheet_path"] do
-  if node["horizon"]["theme"] == "Rackspace"
-    source "rs_stylesheets.html.erb"
-  else
-    source "default_stylesheets.html.erb"
+# Allow the default Ubuntu theme to be used if desired
+if node["horizon"]["theme"] == "ubuntu" && platform?("ubuntu")
+  package "openstack-dashboard-ubuntu-theme" do
+    action :upgrade
+    only_if { platform?("ubuntu") }
   end
+elsif node["horizon"]["theme"] == "ubuntu" && ! platform?("ubuntu")
+  Chef::Application.fatal! "This platform does not have the Ubuntu theme available"
+else
+  package "openstack-dashboard-ubuntu-theme" do
+    action :purge
+    only_if { platform?("ubuntu") }
+  end
+end
+
+# Replace the openstack_dashboard/templates/_stylesheets.html file with the
+#  appropriate template file
+template node["horizon"]["stylesheet_path"] do
+  source node["horizon"]["theme_style_template"]
   mode 0644
   owner "root"
   group grp
 end
 
-# NOTE(mancdaz): check in on http://tickets.opscode.com/browse/CHEF-3949
-# and one day we might be able to use etags cleanly
-if node["horizon"]["theme"] == "Rackspace"
-  images = ["PrivateCloud.png", "Rackspace_Cloud_Company.png",
-    "Rackspace_Cloud_Company_Small.png", "alert_red.png", "body_bkg.gif",
-    "selected_arrow.png"]
-  images.each do |imgname|
-    # Register remote_file resource
-    remote_file "#{node["horizon"]["dash_path"]}/static/dashboard/img/#{imgname}" do
-      source "#{node["horizon"]["theme_image_base"]}/#{imgname}"
-      mode "0644"
-      action :create
+# Here we provide for updating the css files:
+# node["horizon"]["theme_css_list"]
+#   is an array of file names of css scripts to work with
+# node["horizon"]["theme_css_update_style"] =
+#   "cookbook_list" will assume that the list of files are available
+#     as cookbook files
+#   "download_list" will assume that the list of files must be downloaded
+#     from node["horizon"]["theme_css_base"]
+
+unless node["horizon"]["theme_css_list"].nil?
+  if node["horizon"]["theme_css_update_style"] == "cookbook_list"
+    node["horizon"]["theme_css_list"].each do |cssfile|
+      cookbook_file "#{node["horizon"]["dash_path"]}/static/dashboard/css/#{cssfile}" do
+        source "css/#{cssfile}"
+        mode 0644
+        owner "root"
+        group grp
+      end
+    end
+  elsif ! node["horizon"]["theme_css_base"].nil? &&
+        node["horizon"]["theme_css_update_style"] == "download_list"
+    node["horizon"]["theme_css_list"].each do |cssfile|
+      remote_file "#{node["horizon"]["dash_path"]}/static/dashboard/css/#{cssfile}" do
+        source "#{node["horizon"]["theme_css_base"]}/#{cssfile}"
+        mode "0644"
+        action :create
+      end
+    end
+  end
+end
+
+# Here we provide for updating the image files:
+# node["horizon"]["theme_image_list"]
+#   is an array of file names of css scripts to work with
+# node["horizon"]["theme_image_update_style"] =
+#   "cookbook_list" will assume that the list of files are available
+#     as cookbook files
+#   "download_list" will assume that the list of files must be downloaded
+#     from node["horizon"]["theme_image_base"]
+
+unless node["horizon"]["theme_image_list"].nil?
+  if node["horizon"]["theme_image_update_style"] == "cookbook_list"
+    node["horizon"]["theme_image_list"].each do |imgfile|
+      cookbook_file "#{node["horizon"]["dash_path"]}/static/dashboard/img/#{imgfile}" do
+        source "img/#{imgfile}"
+        mode 0644
+        owner "root"
+        group grp
+      end
+    end
+  elsif ! node["horizon"]["theme_image_base"].nil? &&
+        node["horizon"]["theme_image_update_style"] == "download_list"
+    node["horizon"]["theme_image_list"].each do |imgfile|
+      remote_file "#{node["horizon"]["dash_path"]}/static/dashboard/img/#{imgfile}" do
+        source "#{node["horizon"]["theme_image_base"]}/#{imgfile}"
+        mode "0644"
+        action :create
+      end
     end
   end
 end
