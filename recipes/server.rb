@@ -176,12 +176,12 @@ template node["horizon"]["local_settings_path"] do
   notifies :reload, "service[apache2]", :immediately
 end
 
-# FIXME: this shouldn't run every chef run
 execute "openstack-dashboard syncdb" do
   cwd "/usr/share/openstack-dashboard"
   environment({ 'PYTHONPATH' => '/etc/openstack-dashboard:/usr/share/openstack-dashboard:$PYTHONPATH' })
   command "python manage.py syncdb --noinput"
-  action :run
+  action :nothing
+  subscribes :run, "package[openstack-dashboard]" 
   # not_if "/usr/bin/mysql -u root -e 'describe #{node["dash"]["db"]}.django_content_type'"
 end
 
