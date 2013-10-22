@@ -136,6 +136,13 @@ if ks_internal_endpoint["host"] == ks_service_endpoint["host"]
   end
 end
 
+directory "/etc/openstack-dashboard" do
+  owner node['horizon']['horizon_user']
+  group node['apache']['group']
+  mode 00755
+  action :create
+end
+
 #Verify if password_autocomplete attr is set to either on or off
 # If neither it will default to off
 if ["on", "off"].include? node["horizon"]["password_autocomplete"].downcase
