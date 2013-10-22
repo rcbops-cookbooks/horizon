@@ -244,10 +244,10 @@ template value_for_platform(
     "default" => "#{node["apache"]["dir"]}/vhost.d/openstack-dashboard"
   },
   ["redhat", "centos"] => {
-    "default" => "#{node["apache"]["dir"]}/conf.d/openstack-dashboard"
+    "default" => "#{node["apache"]["dir"]}/conf.d/openstack-dashboard.conf"
   },
   "default" => {
-    "default" => "#{node["apache"]["dir"]}/openstack-dashboard"
+    "default" => "#{node["apache"]["dir"]}/openstack-dashboard.conf"
   }
 ) do
     source "dash-site.erb"
