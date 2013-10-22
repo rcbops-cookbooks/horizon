@@ -110,7 +110,7 @@ end
 platform_options["horizon_packages"].each do |pkg|
   package pkg do
     action node["osops"]["do_package_upgrades"] == true ? :upgrade : :install
-    options platform_options["package_overrides"]
+    options platform_options["package_options"]
   end
 end
 
@@ -119,7 +119,7 @@ case node["platform"]
 when "ubuntu"
   # Install Lesscpy
   package "python-lesscpy" do
-    options platform_options["package_overrides"]
+    options platform_options["package_options"]
     action :upgrade
   end
 end

@@ -39,7 +39,7 @@ when "fedora", "centos", "redhat", "amazon", "scientific"
   default["horizon"]["platform"] = {
     "supporting_packages" => ["MySQL-python", "python-cinderclient", "python-neutronclient", "python-keystoneclient", "python-glanceclient", "python-novaclient"],
     "horizon_packages" => ["openstack-dashboard", "python-netaddr", "nodejs-less"],
-    "package_overrides" => ""
+    "package_options" => ""
   }
   default["horizon"]["dash_path"] = "/usr/share/openstack-dashboard"
   default["horizon"]["stylesheet_path"] = "/usr/share/openstack-dashboard/openstack_dashboard/templates/_stylesheets.html"
@@ -53,7 +53,7 @@ when "ubuntu", "debian"
       "python-neutronclient", "python-keystoneclient", "python-glanceclient",
       "python-novaclient"],
     "horizon_packages" => ["openstack-dashboard", "python-netaddr", "node-less"],
-    "package_overrides" => "-o Dpkg::Options::='--force-confold' -o Dpkg::Options::='--force-confdef'"
+    "package_options" => "-o Dpkg::Options::='--force-confold' -o Dpkg::Options::='--force-confdef'"
   }
   default["horizon"]["dash_path"] = "/usr/share/openstack-dashboard/openstack_dashboard"
   default["horizon"]["stylesheet_path"] = "/usr/share/openstack-dashboard/openstack_dashboard/templates/_stylesheets.html"
