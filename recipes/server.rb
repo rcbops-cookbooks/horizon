@@ -25,6 +25,8 @@
 #             configuration file(s) and not change the selinux mode
 #
 
+::Chef::Recipe.send(:include, Opscode::OpenSSL::Password)
+
 chef_gem "chef-rewind"
 require 'chef/rewind'
 
@@ -108,16 +110,26 @@ end
 platform_options["horizon_packages"].each do |pkg|
   package pkg do
     action node["osops"]["do_package_upgrades"] == true ? :upgrade : :install
-    options platform_options["package_overrides"]
+    options platform_options["package_options"]
   end
 end
 
+# TODO(breu) verify this on RPM install
+case node["platform"]
+when "ubuntu"
+  # Install Lesscpy
+  package "python-lesscpy" do
+    options platform_options["package_options"]
+    action :upgrade
+  end
+end
+
+# If internal and service URI's are on same host and either is set for SSL
+# Set the service proto to SSL
 if node['horizon']['endpoint_scheme'].nil?
-  # If internal and service URI's are on same host and either is set for SSL
-  # Set the service proto to SSL
   if ks_internal_endpoint["host"] == ks_service_endpoint["host"]
     if [ks_internal_endpoint["scheme"],ks_service_endpoint["scheme"]].any?{|proto|
-      proto == "https"
+        proto == "https"
       }
       endpoint_scheme = "https"
     else
@@ -126,6 +138,13 @@ if node['horizon']['endpoint_scheme'].nil?
   end
 else
   endpoint_scheme = node['horizon']['endpoint_scheme']
+end
+
+directory "/etc/openstack-dashboard" do
+  owner node['horizon']['horizon_user']
+  group node['apache']['group']
+  mode 00755
+  action :create
 end
 
 #Verify if password_autocomplete attr is set to either on or off
@@ -160,6 +179,7 @@ template node["horizon"]["local_settings_path"] do
   group "root"
   mode "0644"
   variables(
+    :secret_key => node["horizon"]["secret_key"],
     :user => node["horizon"]["db"]["username"],
     :passwd => node["horizon"]["db"]["password"],
     :db_name => node["horizon"]["db"]["name"],
@@ -173,18 +193,38 @@ template node["horizon"]["local_settings_path"] do
     :swift_enable => node["horizon"]["swift"]["enabled"],
     :openstack_endpoint_type => node["horizon"]["endpoint_type"],
     :help_url => node["horizon"]["help_url"] ,
-    :password_autocomplete => password_autocomplete
+    :password_autocomplete => password_autocomplete,
+    :allowed_hosts => node["horizon"]["allowed_hosts"] ? node["horizon"]["allowed_hosts"] : ["*"]
   )
   notifies :reload, "service[apache2]", :immediately
 end
 
-# FIXME: this shouldn't run every chef run
 execute "openstack-dashboard syncdb" do
   cwd "/usr/share/openstack-dashboard"
   environment({ 'PYTHONPATH' => '/etc/openstack-dashboard:/usr/share/openstack-dashboard:$PYTHONPATH' })
   command "python manage.py syncdb --noinput"
-  action :run
+  action :nothing
+  subscribes :run, "package[openstack-dashboard]" 
   # not_if "/usr/bin/mysql -u root -e 'describe #{node["dash"]["db"]}.django_content_type'"
+end
+
+# Set a node attribute for the Horizon User.
+node.set_unless["horizon"]["horizon_user"] = value_for_platform(
+  ["ubuntu", "debian"] => {"default" => "horizon"},
+  ["redhat", "centos", "fedora"] => {"default" => "#{node["apache"]["user"]}"}
+)
+
+# Set a node attribute for the horizon secrete Key
+node.set_unless["horizon"]["horizon_key"] = secure_password
+
+# Lay down the secret key for Horizon
+template node["horizon"]["secret_key"] do
+  source "secret_key.erb"
+  owner node["horizon"]["horizon_user"]
+  group "root"
+  mode "0600"
+  variables(:key_set => node["horizon"]["horizon_key"])
+  notifies :restart, "service[apache2]", :immediately
 end
 
 cookbook_file "#{node["horizon"]["ssl"]["dir"]}/certs/#{node["horizon"]["ssl"]["cert"]}" do
@@ -222,7 +262,6 @@ file "#{node["apache"]["dir"]}/conf.d/openstack-dashboard.conf" do
 end
 
 # Allow us to override the default cert location.
-
 unless node["horizon"]["ssl"].attribute?"cert_override"
   cert_location = "#{node["horizon"]["ssl"]["dir"]}/certs/#{node["horizon"]["ssl"]["cert"]}"
 else
@@ -262,7 +301,7 @@ template value_for_platform(
       :apache_log_dir => node["apache"]["log_dir"],
       :django_wsgi_path => node["horizon"]["wsgi_path"],
       :dash_path => node["horizon"]["dash_path"],
-      :wsgi_user => node["apache"]["user"],
+      :wsgi_user => node["horizon"]["horizon_user"],
       :wsgi_group => node["apache"]["group"],
       :http_port => node["horizon"]["services"]["dash"]["port"],
       :https_port => node["horizon"]["services"]["dash_ssl"]["port"],
@@ -316,6 +355,8 @@ end
 #  appropriate template file
 template node["horizon"]["stylesheet_path"] do
   source node["horizon"]["theme_style_template"]
+template node["horizon"]["stylesheet_path"] do
+  source "default_stylesheets.html.erb"
   mode 0644
   owner "root"
   group grp

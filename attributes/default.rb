@@ -40,8 +40,11 @@ end
 
 default["horizon"]["help_url"] = "http://docs.openstack.org"
 default["horizon"]["password_autocomplete"] = "off"
+default["horizon"]["theme_image_base"] = "http://ef550cb0f0ed69a100c1-40806b80b9b0290f6d33c73b927ee053.r51.cf2.rackcdn.com"
+# domains that horizon accepts traffic to (http://myopenstackdashboard.com, for example)
+default["horizon"]["allowed_hosts"] = nil # set to an array of strings if you want to lock horizon down.
 
-# The Keystone endpoint details for Horizon to use
+# The endpoint type to use from the Keystone service catalog
 default["horizon"]["endpoint_type"] = "internalURL"
 default["horizon"]["endpoint_host"] = nil
 default["horizon"]["endpoint_port"] = nil
@@ -50,31 +53,29 @@ default["horizon"]["endpoint_scheme"] = nil
 case node["platform"]
 when "fedora", "centos", "redhat", "amazon", "scientific"
   default["horizon"]["ssl"]["dir"] = "/etc/pki/tls"
+  default["horizon"]["secret_key"] = "/etc/openstack-dashboard/secret_key"
   default["horizon"]["local_settings_path"] = "/etc/openstack-dashboard/local_settings"
   # TODO(shep) - Fedora does not generate self signed certs by default
   default["horizon"]["platform"] = {
-    "supporting_packages" => ["MySQL-python", "python-cinderclient",
-      "python-quantumclient", "python-keystoneclient", "python-glanceclient",
-      "python-novaclient"],
+    "supporting_packages" => ["MySQL-python", "python-cinderclient", "python-neutronclient", "python-keystoneclient", "python-glanceclient", "python-novaclient"],
     "horizon_packages" => ["openstack-dashboard", "python-netaddr", "nodejs-less"],
-    "package_overrides" => ""
+    "package_options" => ""
   }
   default["horizon"]["dash_path"] = "/usr/share/openstack-dashboard"
-  default["horizon"]["stylesheet_path"] =
-    "/usr/share/openstack-dashboard/openstack_dashboard/templates/_stylesheets.html"
+  default["horizon"]["stylesheet_path"] = "/usr/share/openstack-dashboard/openstack_dashboard/templates/_stylesheets.html"
   default["horizon"]["wsgi_path"] = node["horizon"]["dash_path"] + "/openstack_dashboard/wsgi"
 when "ubuntu", "debian"
   default["horizon"]["ssl"]["dir"] = "/etc/ssl"
+  default["horizon"]["secret_key"] = "/etc/openstack-dashboard/secret_key"
   default["horizon"]["local_settings_path"] = "/etc/openstack-dashboard/local_settings.py"
   default["horizon"]["platform"] = {
     "supporting_packages" => ["python-mysqldb", "python-cinderclient",
-      "python-quantumclient", "python-keystoneclient", "python-glanceclient",
+      "python-neutronclient", "python-keystoneclient", "python-glanceclient",
       "python-novaclient"],
-    "horizon_packages" => ["lessc", "openstack-dashboard", "python-netaddr"],
-    "package_overrides" => "-o Dpkg::Options::='--force-confold' -o Dpkg::Options::='--force-confdef'"
+    "horizon_packages" => ["openstack-dashboard", "python-netaddr", "node-less"],
+    "package_options" => "-o Dpkg::Options::='--force-confold' -o Dpkg::Options::='--force-confdef'"
   }
   default["horizon"]["dash_path"] = "/usr/share/openstack-dashboard/openstack_dashboard"
-  default["horizon"]["stylesheet_path"] =
-    "/usr/share/openstack-dashboard/openstack_dashboard/templates/_stylesheets.html"
+  default["horizon"]["stylesheet_path"] = "/usr/share/openstack-dashboard/openstack_dashboard/templates/_stylesheets.html"
   default["horizon"]["wsgi_path"] = node["horizon"]["dash_path"] + "/wsgi"
 end
