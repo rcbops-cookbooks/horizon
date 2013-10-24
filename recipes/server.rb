@@ -114,6 +114,53 @@ platform_options["horizon_packages"].each do |pkg|
   end
 end
 
+horizon_user = node['horizon']['horizon_user']
+
+# Make Horizon User
+user horizon_user do
+  comment "Horizon User"
+  system true
+  home "/var/lib/openstack-dashboard"
+  shell "/bin/false"
+end
+
+# Make Openstack Dashboard Direcotry
+directory "/usr/share/openstack-dashboard" do
+  owner horizon_user
+  group horizon_user
+  mode 00755
+  action :create
+end
+
+# Make Openstack etc Direcotry
+directory "/etc/openstack-dashboard" do
+  owner horizon_user
+  group horizon_user
+  mode 00755
+  action :create
+end
+
+# Make Openstack Dashboard Home Directory
+directory "/var/lib/openstack-dashboard" do
+  owner horizon_user
+  group horizon_user
+  mode 00755
+  action :create
+end
+
+if node["horizon"]["rax_logo"] == true
+  logos = ["logo.png", "logo-splash.png"]
+  location = "/usr/share/openstack-dashboard/static/dashboard/img"
+  logos.each do |img|
+    cookbook_file "#{location}/#{img}" do
+      source "rpc.png"
+      mode 0644
+      owner horizon_user
+      group horizon_user
+    end
+  end
+end
+
 # TODO(breu) verify this on RPM install
 case node["platform"]
 when "ubuntu"
@@ -138,13 +185,6 @@ if node['horizon']['endpoint_scheme'].nil?
   end
 else
   endpoint_scheme = node['horizon']['endpoint_scheme']
-end
-
-directory "/etc/openstack-dashboard" do
-  owner node['horizon']['horizon_user']
-  group node['apache']['group']
-  mode 00755
-  action :create
 end
 
 #Verify if password_autocomplete attr is set to either on or off
@@ -175,8 +215,8 @@ end
 
 template node["horizon"]["local_settings_path"] do
   source "local_settings.py.erb"
-  owner "root"
-  group "root"
+  owner horizon_user
+  group horizon_user
   mode "0644"
   variables(
     :secret_key => node["horizon"]["secret_key"],
@@ -208,20 +248,14 @@ execute "openstack-dashboard syncdb" do
   # not_if "/usr/bin/mysql -u root -e 'describe #{node["dash"]["db"]}.django_content_type'"
 end
 
-# Set a node attribute for the Horizon User.
-node.set_unless["horizon"]["horizon_user"] = value_for_platform(
-  ["ubuntu", "debian"] => {"default" => "horizon"},
-  ["redhat", "centos", "fedora"] => {"default" => "#{node["apache"]["user"]}"}
-)
-
 # Set a node attribute for the horizon secrete Key
 node.set_unless["horizon"]["horizon_key"] = secure_password
 
 # Lay down the secret key for Horizon
 template node["horizon"]["secret_key"] do
   source "secret_key.erb"
-  owner node["horizon"]["horizon_user"]
-  group "root"
+  owner horizon_user
+  group horizon_user
   mode "0600"
   variables(:key_set => node["horizon"]["horizon_key"])
   notifies :restart, "service[apache2]", :immediately
@@ -245,7 +279,7 @@ cookbook_file "#{node["horizon"]["ssl"]["dir"]}/private/#{node["horizon"]["ssl"]
   source "horizon.key"
   mode 0640
   owner "root"
-  group grp # Don't know about fedora
+  group grp
 end
 
 # stop apache bitching
@@ -301,7 +335,7 @@ template value_for_platform(
       :apache_log_dir => node["apache"]["log_dir"],
       :django_wsgi_path => node["horizon"]["wsgi_path"],
       :dash_path => node["horizon"]["dash_path"],
-      :wsgi_user => node["horizon"]["horizon_user"],
+      :wsgi_user => horizon_user,
       :wsgi_group => node["apache"]["group"],
       :http_port => node["horizon"]["services"]["dash"]["port"],
       :https_port => node["horizon"]["services"]["dash_ssl"]["port"],
@@ -356,8 +390,8 @@ end
 template node["horizon"]["stylesheet_path"] do
   source node["horizon"]["theme_style_template"]
   mode 0644
-  owner "root"
-  group grp
+  owner horizon_user
+  group horizon_user
 end
 
 # Here we provide for updating the css files:
@@ -375,8 +409,8 @@ unless node["horizon"]["theme_css_list"].nil?
       cookbook_file "#{node["horizon"]["dash_path"]}/static/dashboard/css/#{cssfile}" do
         source "css/#{cssfile}"
         mode 0644
-        owner "root"
-        group grp
+        owner horizon_user
+        group horizon_user
       end
     end
   elsif ! node["horizon"]["theme_css_base"].nil? &&
@@ -407,7 +441,7 @@ unless node["horizon"]["theme_image_list"].nil?
         source "img/#{imgfile}"
         mode 0644
         owner "root"
-        group grp
+        group horizon_user
       end
     end
   elsif ! node["horizon"]["theme_image_base"].nil? &&
