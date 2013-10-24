@@ -129,7 +129,7 @@ end
 
 # Make Openstack Dashboard Direcotry
 directories = ["/usr/share/openstack-dashboard", "/etc/openstack-dashboard", "/var/lib/openstack-dashboard"]
-directories.each |dir| do
+directories.each do |dir|
   directory dir do
     owner horizon_user
     group horizon_user
