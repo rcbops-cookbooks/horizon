@@ -59,8 +59,6 @@ unless node['apache']['listen_ports'].include?("443")
   node.set['apache']['listen_ports'] = node['apache']['listen_ports'] + ["443"]
 end
 
-ports = node['apache']['listen_ports']
-
 rewind "template[#{node["apache"]["dir"]}/ports.conf]" do
   source "ports.conf.erb"
   cookbook_name "horizon"
@@ -89,12 +87,11 @@ end
 ks_admin_endpoint = get_access_endpoint("keystone-api", "keystone", "admin-api")
 ks_service_endpoint = get_access_endpoint("keystone-api", "keystone", "service-api")
 ks_internal_endpoint = get_access_endpoint("keystone-api", "keystone", "internal-api")
-keystone = get_settings_by_role("keystone-setup", "keystone")
 
 #creates db and user
 #returns connection info
 #defined in osops-utils/libraries
-mysql_info = create_db_and_user(
+create_db_and_user(
   "mysql",
   node["horizon"]["db"]["name"],
   node["horizon"]["db"]["username"],
@@ -127,7 +124,7 @@ user horizon_user do
   not_if "id #{horizon_user}"
 end
 
-# Make Openstack Dashboard Direcotry
+# Make Openstack Dashboard Direcotries
 directories = ["/usr/share/openstack-dashboard", "/etc/openstack-dashboard", "/var/lib/openstack-dashboard"]
 directories.each do |dir|
   directory dir do
@@ -239,7 +236,7 @@ execute "openstack-dashboard syncdb" do
 end
 
 # Set a node attribute for the horizon secrete Key
-node.set_unless["horizon"]["horizon_key"] = secure_password
+node.set_unless["horizon"]["horizon_key"] = secure_password(16)
 
 # Lay down the secret key for Horizon
 template node["horizon"]["secret_key"] do
@@ -298,7 +295,6 @@ else
   key_location = node["horizon"]["ssl"]["key_override"]
 end
 
-# TODO(breu): verify this for fedora
 template value_for_platform(
   ["ubuntu", "debian", "fedora"] => {
     "default" => "#{node["apache"]["dir"]}/sites-available/openstack-dashboard"
@@ -344,13 +340,10 @@ elsif platform?("fedora") then
   end
 end
 
+# enable the site
 apache_site "openstack-dashboard" do
   enable true
 end
-
-# TODO(shep)
-# Horizon has a forced dependency on there being a volume service endpoint in your keystone catalog
-# https://answers.launchpad.net/horizon/+question/189551
 
 # This is a dirty hack to deal with https://bugs.launchpad.net/nova/+bug/932468
 directory "/var/www/.novaclient" do
@@ -378,7 +371,7 @@ end
 # Replace the openstack_dashboard/templates/_stylesheets.html file with the
 #  appropriate template file
 template node["horizon"]["stylesheet_path"] do
-  source node["horizon"]["theme_style_template"]
+  source "default_stylesheets.html.erb"
   mode 0644
   owner horizon_user
   group horizon_user
@@ -392,23 +385,15 @@ end
 #     as cookbook files
 #   "download_list" will assume that the list of files must be downloaded
 #     from node["horizon"]["theme_css_base"]
-
-unless node["horizon"]["theme_css_list"].nil?
-  if node["horizon"]["theme_css_update_style"] == "cookbook_list"
-    node["horizon"]["theme_css_list"].each do |cssfile|
-      cookbook_file "#{node["horizon"]["dash_path"]}/static/dashboard/css/#{cssfile}" do
-        source "css/#{cssfile}"
-        mode 0644
+hattr = node["horizon"]
+unless hattr["theme_css_list"].nil?
+  if ! hattr["theme_css_base"].nil? && hattr["theme_css_update_style"] == true
+    hattr["theme_css_list"].each do |cssfile|
+      remote_file "#{hattr["dash_path"]}/static/dashboard/css/#{cssfile}" do
+        source "#{hattr["theme_css_base"]}/#{cssfile}"
+        mode "0644"
         owner horizon_user
         group horizon_user
-      end
-    end
-  elsif ! node["horizon"]["theme_css_base"].nil? &&
-        node["horizon"]["theme_css_update_style"] == "download_list"
-    node["horizon"]["theme_css_list"].each do |cssfile|
-      remote_file "#{node["horizon"]["dash_path"]}/static/dashboard/css/#{cssfile}" do
-        source "#{node["horizon"]["theme_css_base"]}/#{cssfile}"
-        mode "0644"
         action :create
       end
     end
@@ -423,23 +408,14 @@ end
 #     as cookbook files
 #   "download_list" will assume that the list of files must be downloaded
 #     from node["horizon"]["theme_image_base"]
-
-unless node["horizon"]["theme_image_list"].nil?
-  if node["horizon"]["theme_image_update_style"] == "cookbook_list"
-    node["horizon"]["theme_image_list"].each do |imgfile|
-      cookbook_file "#{node["horizon"]["dash_path"]}/static/dashboard/img/#{imgfile}" do
-        source "img/#{imgfile}"
-        mode 0644
-        owner "root"
-        group horizon_user
-      end
-    end
-  elsif ! node["horizon"]["theme_image_base"].nil? &&
-        node["horizon"]["theme_image_update_style"] == "download_list"
-    node["horizon"]["theme_image_list"].each do |imgfile|
-      remote_file "#{node["horizon"]["dash_path"]}/static/dashboard/img/#{imgfile}" do
-        source "#{node["horizon"]["theme_image_base"]}/#{imgfile}"
+unless hattr["theme_image_list"].nil?
+  if ! hattr["theme_image_base"].nil? && hattr["theme_image_update_style"] == true
+    hattr["theme_image_list"].each do |imgfile|
+      remote_file "#{hattr["dash_path"]}/static/dashboard/img/#{imgfile}" do
+        source "#{hattr["theme_image_base"]}/#{imgfile}"
         mode "0644"
+        owner horizon_user
+        group horizon_user
         action :create
       end
     end
