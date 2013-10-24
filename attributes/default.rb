@@ -75,7 +75,6 @@ default["horizon"]["endpoint_port"] = nil
 default["horizon"]["endpoint_scheme"] = nil
 
 # Set platform options
-default["horizon"]["local_settings_path"] = "/etc/openstack-dashboard/local_settings"
 default["horizon"]["secret_key"] = "/etc/openstack-dashboard/secret_key"
 default["horizon"]["stylesheet_path"] = "/usr/share/openstack-dashboard/openstack_dashboard/templates/_stylesheets.html"
 
@@ -84,6 +83,7 @@ case node["platform"]
     default["horizon"]["dash_path"] = "/usr/share/openstack-dashboard"
     default["horizon"]["wsgi_path"] = node["horizon"]["dash_path"] + "/openstack_dashboard/wsgi"
     default["horizon"]["ssl"]["dir"] = "/etc/pki/tls"
+    default["horizon"]["local_settings_path"] = "/etc/openstack-dashboard/local_settings"
     default["horizon"]["platform"] = {
       "supporting_packages" => ["MySQL-python",
                                 "python-cinderclient",
@@ -100,6 +100,7 @@ case node["platform"]
     default["horizon"]["dash_path"] = "/usr/share/openstack-dashboard/openstack_dashboard"
     default["horizon"]["wsgi_path"] = node["horizon"]["dash_path"] + "/wsgi"
     default["horizon"]["ssl"]["dir"] = "/etc/ssl"
+    default["horizon"]["local_settings_path"] = "/etc/openstack-dashboard/local_settings.py"
     default["horizon"]["platform"] = {
       "supporting_packages" => ["python-mysqldb",
                                 "python-cinderclient",
