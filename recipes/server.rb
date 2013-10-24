@@ -122,6 +122,9 @@ user horizon_user do
   system true
   home "/var/lib/openstack-dashboard"
   shell "/bin/false"
+  supports :manage_home=>false
+  action :create
+  not_if "id #{horizon_user}"
 end
 
 # Make Openstack Dashboard Direcotry
