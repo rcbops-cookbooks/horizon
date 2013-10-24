@@ -30,7 +30,7 @@ Chef 0.10.0 or higher required (for Chef environment use).
 Platforms
 --------
 
-* CentOS >= 6.3
+* CentOS >= 6.4
 * Ubuntu >= 12.04
 
 Cookbooks
