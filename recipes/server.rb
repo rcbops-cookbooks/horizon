@@ -104,13 +104,6 @@ platform_options["supporting_packages"].each do |pkg|
   include_recipe "osops-utils::#{pkg}"
 end
 
-platform_options["horizon_packages"].each do |pkg|
-  package pkg do
-    action node["osops"]["do_package_upgrades"] == true ? :upgrade : :install
-    options platform_options["package_options"]
-  end
-end
-
 horizon_user = node['horizon']['horizon_user']
 
 # Make Horizon User
@@ -226,13 +219,19 @@ template node["horizon"]["local_settings_path"] do
   notifies :reload, "service[apache2]", :immediately
 end
 
+platform_options["horizon_packages"].each do |pkg|
+  package pkg do
+    action node["osops"]["do_package_upgrades"] == true ? :upgrade : :install
+    options platform_options["package_options"]
+  end
+end
+
 execute "openstack-dashboard syncdb" do
   cwd "/usr/share/openstack-dashboard"
   environment({ 'PYTHONPATH' => '/etc/openstack-dashboard:/usr/share/openstack-dashboard:$PYTHONPATH' })
   command "python manage.py syncdb --noinput"
   action :nothing
-  subscribes :run, "package[openstack-dashboard]" 
-  # not_if "/usr/bin/mysql -u root -e 'describe #{node["dash"]["db"]}.django_content_type'"
+  subscribes :run, "package[openstack-dashboard]"
 end
 
 # Set a node attribute for the horizon secrete Key
