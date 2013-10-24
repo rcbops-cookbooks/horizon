@@ -355,8 +355,6 @@ end
 #  appropriate template file
 template node["horizon"]["stylesheet_path"] do
   source node["horizon"]["theme_style_template"]
-template node["horizon"]["stylesheet_path"] do
-  source "default_stylesheets.html.erb"
   mode 0644
   owner "root"
   group grp
