@@ -67,6 +67,9 @@ server
 
 Attributes 
 ==========
+* `horizon['horizon_user']` - horizon system user
+* `horizon["rax_logo"]` - Change default horizon logo to rax logo (true || false)
+
 * `horizon["db"]["name"]` - name of horizon database
 * `horizon["db"]["username"]` - username for horizon database access
 * `horizon["db"]["password"]` - password for horizon database access

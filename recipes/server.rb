@@ -128,27 +128,14 @@ user horizon_user do
 end
 
 # Make Openstack Dashboard Direcotry
-directory "/usr/share/openstack-dashboard" do
-  owner horizon_user
-  group horizon_user
-  mode 00755
-  action :create
-end
-
-# Make Openstack etc Direcotry
-directory "/etc/openstack-dashboard" do
-  owner horizon_user
-  group horizon_user
-  mode 00755
-  action :create
-end
-
-# Make Openstack Dashboard Home Directory
-directory "/var/lib/openstack-dashboard" do
-  owner horizon_user
-  group horizon_user
-  mode 00755
-  action :create
+directories = ["/usr/share/openstack-dashboard". "/etc/openstack-dashboard", "/var/lib/openstack-dashboard"]
+directories.each |dir| do
+  directory dir do
+    owner horizon_user
+    group horizon_user
+    mode 00755
+    action :create
+  end
 end
 
 if node["horizon"]["rax_logo"] == true
