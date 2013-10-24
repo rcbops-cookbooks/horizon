@@ -128,19 +128,6 @@ directories.each do |dir|
   end
 end
 
-if node["horizon"]["rax_logo"] == true
-  logos = ["logo.png", "logo-splash.png"]
-  location = "/usr/share/openstack-dashboard/static/dashboard/img"
-  logos.each do |img|
-    cookbook_file "#{location}/#{img}" do
-      source "rpc.png"
-      mode 0644
-      owner horizon_user
-      group horizon_user
-    end
-  end
-end
-
 # TODO(breu) verify this on RPM install
 case node["platform"]
 when "ubuntu"
@@ -223,6 +210,19 @@ platform_options["horizon_packages"].each do |pkg|
   package pkg do
     action node["osops"]["do_package_upgrades"] == true ? :upgrade : :install
     options platform_options["package_options"]
+  end
+end
+
+if node["horizon"]["rax_logo"] == true
+  logos = ["logo.png", "logo-splash.png"]
+  location = "/usr/share/openstack-dashboard/static/dashboard/img"
+  logos.each do |img|
+    cookbook_file "#{location}/#{img}" do
+      source "rpc.png"
+      mode 0644
+      owner horizon_user
+      group horizon_user
+    end
   end
 end
 
