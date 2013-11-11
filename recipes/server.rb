@@ -123,7 +123,8 @@ directories.each do |dir|
   directory dir do
     owner horizon_user
     group horizon_user
-    mode 00755
+    mode 00775
+    subscribes :create, "package[openstack-dashboard]", :immediately
     action :create
   end
 end
