@@ -98,7 +98,7 @@ create_db_and_user(
   node["horizon"]["db"]["password"]
 )
 
-mysql_connect_ip = get_access_endpoint('mysql-master', 'mysql', 'db')["host"]
+mysql_connect_ip = get_mysql_endpoint["host"]
 
 platform_options["supporting_packages"].each do |pkg|
   include_recipe "osops-utils::#{pkg}"
