@@ -43,6 +43,9 @@ default["horizon"]["services"]["dash_ssl"]["network"] = "public"
 default["horizon"]["services"]["dash_ssl"]["port"] = 443
 default["horizon"]["services"]["dash_ssl"]["path"] = "/"
 
+# Neutron Options
+default["horizon"]["neutron"]["enable_lb"] = "False"
+
 # Enable / Disable Swift panel
 default["horizon"]["swift"]["enabled"] = "False"
 
