@@ -19,11 +19,33 @@ default["horizon"]["services"]["dash_ssl"]["path"] = "/"
 default["horizon"]["swift"]["enabled"] = "False"
 
 default["horizon"]["theme"] = "default"
-
+default["horizon"]["theme_image_update_style"] = "download_list"
 default["horizon"]["theme_image_base"] = "http://ef550cb0f0ed69a100c1-40806b80b9b0290f6d33c73b927ee053.r51.cf2.rackcdn.com"
+default["horizon"]["theme_image_list"] = ["PrivateCloud.png", "Rackspace_Cloud_Company.png",
+    "Rackspace_Cloud_Company_Small.png", "alert_red.png", "body_bkg.gif",
+    "selected_arrow.png"]
+default["horizon"]["theme_css_update_style"] = "cookbook_list"
+default["horizon"]["theme_css_base"] = nil
+case node["horizon"]["theme"]
+when "ubuntu"
+  default["horizon"]["theme_style_template"] = "ubuntu_stylesheets.html.erb"
+  default["horizon"]["theme_css_list"] = nil
+when "Rackspace"
+  default["horizon"]["theme_style_template"] = "rs_stylesheets.html.erb"
+  default["horizon"]["theme_css_list"] = ["folsom.css"]
+else
+  default["horizon"]["theme_style_template"] = "default_stylesheets.html.erb"
+  default["horizon"]["theme_css_list"] = nil
+end
 
-# The endpoint type to use from the Keystone service catalog
+default["horizon"]["help_url"] = "http://docs.openstack.org"
+default["horizon"]["password_autocomplete"] = "off"
+
+# The Keystone endpoint details for Horizon to use
 default["horizon"]["endpoint_type"] = "internalURL"
+default["horizon"]["endpoint_host"] = nil
+default["horizon"]["endpoint_port"] = nil
+default["horizon"]["endpoint_scheme"] = nil
 
 case node["platform"]
 when "fedora", "centos", "redhat", "amazon", "scientific"

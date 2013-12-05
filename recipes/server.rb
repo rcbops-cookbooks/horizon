@@ -86,6 +86,7 @@ end
 
 ks_admin_endpoint = get_access_endpoint("keystone-api", "keystone", "admin-api")
 ks_service_endpoint = get_access_endpoint("keystone-api", "keystone", "service-api")
+ks_internal_endpoint = get_access_endpoint("keystone-api", "keystone", "internal-api")
 keystone = get_settings_by_role("keystone-setup", "keystone")
 
 #creates db and user
@@ -111,6 +112,48 @@ platform_options["horizon_packages"].each do |pkg|
   end
 end
 
+if node['horizon']['endpoint_scheme'].nil?
+  # If internal and service URI's are on same host and either is set for SSL
+  # Set the service proto to SSL
+  if ks_internal_endpoint["host"] == ks_service_endpoint["host"]
+    if [ks_internal_endpoint["scheme"],ks_service_endpoint["scheme"]].any?{|proto|
+      proto == "https"
+      }
+      endpoint_scheme = "https"
+    else
+      endpoint_scheme = ks_service_endpoint["scheme"]
+    end
+  end
+else
+  endpoint_scheme = node['horizon']['endpoint_scheme']
+end
+
+#Verify if password_autocomplete attr is set to either on or off
+# If neither it will default to off
+if ["on", "off"].include? node["horizon"]["password_autocomplete"].downcase
+  #attr validated; set to what was supplied
+  password_autocomplete = node["horizon"]["password_autocomplete"].downcase
+else
+  # attr validation failed. set to off
+  Chef::Log.warn("Current package[horizon-server]: password_autocomplete attribute supplied as, "\
+                 << node["horizon"]["password_autocomplete"]\
+                 << " Value must be set to \"off\" or \"on\","\
+                 " setting attribute to off")
+  password_autocomplete = "off"
+end
+
+if node['horizon']['endpoint_host'].nil?
+  endpoint_host = ks_service_endpoint["host"]
+else
+  endpoint_host = node['horizon']['endpoint_host']
+end
+
+if node["horizon"]["endpoint_port"].nil?
+  endpoint_port = ks_service_endpoint["port"]
+else
+  endpoint_port = node["horizon"]["endpoint_port"]
+end
+
 template node["horizon"]["local_settings_path"] do
   source "local_settings.py.erb"
   owner "root"
@@ -121,14 +164,18 @@ template node["horizon"]["local_settings_path"] do
     :passwd => node["horizon"]["db"]["password"],
     :db_name => node["horizon"]["db"]["name"],
     :db_ipaddress => mysql_connect_ip,
-    :keystone_api_ipaddress => ks_admin_endpoint["host"],
-    :service_port => ks_service_endpoint["port"],
-    :service_protocol => ks_service_endpoint["scheme"],
+    :use_ssl => node["horizon"]["use_ssl"],
+    :keystone_api_ipaddress => endpoint_host,
+    :service_port => endpoint_port,
+    :service_protocol => endpoint_scheme,
     :admin_port => ks_admin_endpoint["port"],
     :admin_protocol => ks_admin_endpoint["scheme"],
     :swift_enable => node["horizon"]["swift"]["enabled"],
-    :openstack_endpoint_type => node["horizon"]["endpoint_type"]
+    :openstack_endpoint_type => node["horizon"]["endpoint_type"],
+    :help_url => node["horizon"]["help_url"] ,
+    :password_autocomplete => password_autocomplete
   )
+  notifies :reload, "service[apache2]", :immediately
 end
 
 # FIXME: this shouldn't run every chef run
@@ -145,7 +192,6 @@ cookbook_file "#{node["horizon"]["ssl"]["dir"]}/certs/#{node["horizon"]["ssl"]["
   mode 0644
   owner "root"
   group "root"
-  notifies :run, "execute[restore-selinux-context]", :immediately
 end
 
 case node["platform"]
@@ -160,7 +206,6 @@ cookbook_file "#{node["horizon"]["ssl"]["dir"]}/private/#{node["horizon"]["ssl"]
   mode 0640
   owner "root"
   group grp # Don't know about fedora
-  notifies :run, "execute[restore-selinux-context]", :immediately
 end
 
 # stop apache bitching
@@ -199,10 +244,10 @@ template value_for_platform(
     "default" => "#{node["apache"]["dir"]}/vhost.d/openstack-dashboard"
   },
   ["redhat", "centos"] => {
-    "default" => "#{node["apache"]["dir"]}/conf.d/openstack-dashboard"
+    "default" => "#{node["apache"]["dir"]}/conf.d/openstack-dashboard.conf"
   },
   "default" => {
-    "default" => "#{node["apache"]["dir"]}/openstack-dashboard"
+    "default" => "#{node["apache"]["dir"]}/openstack-dashboard.conf"
   }
 ) do
     source "dash-site.erb"
@@ -223,16 +268,8 @@ template value_for_platform(
       :https_port => node["horizon"]["services"]["dash_ssl"]["port"],
       :listen_ip => listen_ip
     )
-    notifies :run, "execute[restore-selinux-context]", :immediately
     notifies :reload, "service[apache2]", :immediately
   end
-
-# ubuntu includes their own branding - we need to delete this until ubuntu makes this a
-# configurable paramter
-package "openstack-dashboard-ubuntu-theme" do
-  action :purge
-  only_if { platform?("ubuntu") }
-end
 
 if platform?("debian", "ubuntu") then
   apache_site "000-default" do
@@ -241,20 +278,11 @@ if platform?("debian", "ubuntu") then
 elsif platform?("fedora") then
   apache_site "default" do
     enable false
-    notifies :run, "execute[restore-selinux-context]", :immediately
   end
 end
 
 apache_site "openstack-dashboard" do
   enable true
-  notifies :run, "execute[restore-selinux-context]", :immediately
-  notifies :reload, "service[apache2]", :immediately
-end
-
-execute "restore-selinux-context" do
-  command "restorecon -Rv /etc/httpd /etc/pki; chcon -R -t httpd_sys_content_t /usr/share/openstack-dashboard || :"
-  action :nothing
-  only_if { platform?("fedora") }
 end
 
 # TODO(shep)
@@ -269,37 +297,88 @@ directory "/var/www/.novaclient" do
   action :create
 end
 
-cookbook_file "#{node["horizon"]["dash_path"]}/static/dashboard/css/folsom.css" do
-  only_if { node["horizon"]["theme"] }
-  source "css/folsom.css"
-  mode 0644
-  owner "root"
-  group grp
-end
-
-template node["horizon"]["stylesheet_path"] do
-  if node["horizon"]["theme"] == "Rackspace"
-    source "rs_stylesheets.html.erb"
-  else
-    source "default_stylesheets.html.erb"
+# Allow the default Ubuntu theme to be used if desired
+if node["horizon"]["theme"] == "ubuntu" && platform?("ubuntu")
+  package "openstack-dashboard-ubuntu-theme" do
+    action :upgrade
+    only_if { platform?("ubuntu") }
   end
+elsif node["horizon"]["theme"] == "ubuntu" && ! platform?("ubuntu")
+  Chef::Application.fatal! "This platform does not have the Ubuntu theme available"
+else
+  package "openstack-dashboard-ubuntu-theme" do
+    action :purge
+    only_if { platform?("ubuntu") }
+  end
+end
+
+# Replace the openstack_dashboard/templates/_stylesheets.html file with the
+#  appropriate template file
+template node["horizon"]["stylesheet_path"] do
+  source node["horizon"]["theme_style_template"]
   mode 0644
   owner "root"
   group grp
 end
 
-# NOTE(mancdaz): check in on http://tickets.opscode.com/browse/CHEF-3949
-# and one day we might be able to use etags cleanly
-if node["horizon"]["theme"] == "Rackspace"
-  images = ["PrivateCloud.png", "Rackspace_Cloud_Company.png",
-    "Rackspace_Cloud_Company_Small.png", "alert_red.png", "body_bkg.gif",
-    "selected_arrow.png"]
-  images.each do |imgname|
-    # Register remote_file resource
-    remote_file "#{node["horizon"]["dash_path"]}/static/dashboard/img/#{imgname}" do
-      source "#{node["horizon"]["theme_image_base"]}/#{imgname}"
-      mode "0644"
-      action :create
+# Here we provide for updating the css files:
+# node["horizon"]["theme_css_list"]
+#   is an array of file names of css scripts to work with
+# node["horizon"]["theme_css_update_style"] =
+#   "cookbook_list" will assume that the list of files are available
+#     as cookbook files
+#   "download_list" will assume that the list of files must be downloaded
+#     from node["horizon"]["theme_css_base"]
+
+unless node["horizon"]["theme_css_list"].nil?
+  if node["horizon"]["theme_css_update_style"] == "cookbook_list"
+    node["horizon"]["theme_css_list"].each do |cssfile|
+      cookbook_file "#{node["horizon"]["dash_path"]}/static/dashboard/css/#{cssfile}" do
+        source "css/#{cssfile}"
+        mode 0644
+        owner "root"
+        group grp
+      end
+    end
+  elsif ! node["horizon"]["theme_css_base"].nil? &&
+        node["horizon"]["theme_css_update_style"] == "download_list"
+    node["horizon"]["theme_css_list"].each do |cssfile|
+      remote_file "#{node["horizon"]["dash_path"]}/static/dashboard/css/#{cssfile}" do
+        source "#{node["horizon"]["theme_css_base"]}/#{cssfile}"
+        mode "0644"
+        action :create
+      end
+    end
+  end
+end
+
+# Here we provide for updating the image files:
+# node["horizon"]["theme_image_list"]
+#   is an array of file names of css scripts to work with
+# node["horizon"]["theme_image_update_style"] =
+#   "cookbook_list" will assume that the list of files are available
+#     as cookbook files
+#   "download_list" will assume that the list of files must be downloaded
+#     from node["horizon"]["theme_image_base"]
+
+unless node["horizon"]["theme_image_list"].nil?
+  if node["horizon"]["theme_image_update_style"] == "cookbook_list"
+    node["horizon"]["theme_image_list"].each do |imgfile|
+      cookbook_file "#{node["horizon"]["dash_path"]}/static/dashboard/img/#{imgfile}" do
+        source "img/#{imgfile}"
+        mode 0644
+        owner "root"
+        group grp
+      end
+    end
+  elsif ! node["horizon"]["theme_image_base"].nil? &&
+        node["horizon"]["theme_image_update_style"] == "download_list"
+    node["horizon"]["theme_image_list"].each do |imgfile|
+      remote_file "#{node["horizon"]["dash_path"]}/static/dashboard/img/#{imgfile}" do
+        source "#{node["horizon"]["theme_image_base"]}/#{imgfile}"
+        mode "0644"
+        action :create
+      end
     end
   end
 end
