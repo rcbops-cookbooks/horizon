@@ -150,6 +150,8 @@ if node['horizon']['endpoint_scheme'].nil?
     else
       endpoint_scheme = ks_service_endpoint["scheme"]
     end
+  else
+    endpoint_scheme = ks_service_endpoint["scheme"]
   end
 else
   endpoint_scheme = node['horizon']['endpoint_scheme']
