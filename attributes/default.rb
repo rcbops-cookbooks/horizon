@@ -52,6 +52,9 @@ default["horizon"]["swift"]["enabled"] = "False"
 # Set Default Theme, Supports "default" or "ubuntu"
 default["horizon"]["theme"] = "default"
 
+# Set Site Branding/Title
+default["horizon"]["site_branding"] = "OpenStack Dashboard"
+
 # Options Customize the theme images
 default["horizon"]["theme_image_update_style"] = false
 default["horizon"]["theme_image_base"] = nil
