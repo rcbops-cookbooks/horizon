@@ -205,7 +205,8 @@ template node["horizon"]["local_settings_path"] do
     :help_url => node["horizon"]["help_url"] ,
     :password_autocomplete => password_autocomplete,
     :allowed_hosts => node["horizon"]["allowed_hosts"] ? node["horizon"]["allowed_hosts"] : ["*"],
-    :enable_lb => node["horizon"]["neutron"]["enable_lb"]
+    :enable_lb => node["horizon"]["neutron"]["enable_lb"],
+    :site_branding => node["horizon"]["site_branding"]
   )
   notifies :reload, "service[apache2]", :immediately
 end
