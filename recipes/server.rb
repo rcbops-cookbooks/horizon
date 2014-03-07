@@ -301,7 +301,7 @@ end
 
 unless node["horizon"]["ssl"]["chain"].nil?
   chain_location = "#{node["horizon"]["ssl"]["dir"]}/certs/#{node["horizon"]["ssl"]["chain"]}"
-
+end
 template value_for_platform(
   ["ubuntu", "debian", "fedora"] => {
     "default" => "#{node["apache"]["dir"]}/sites-available/openstack-dashboard"
