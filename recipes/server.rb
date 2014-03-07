@@ -299,11 +299,8 @@ else
   key_location = node["horizon"]["ssl"]["key_override"]
 end
 
-unless node["horizon"]["ssl"].attribute?"chain_override"
+unless node["horizon"]["ssl"]["chain"].nil?
   chain_location = "#{node["horizon"]["ssl"]["dir"]}/certs/#{node["horizon"]["ssl"]["chain"]}"
-else
-  chain_location = node["horizon"]["ssl"]["chain_override"]
-end
 
 template value_for_platform(
   ["ubuntu", "debian", "fedora"] => {
