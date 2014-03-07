@@ -30,6 +30,7 @@ default["horizon"]["db"]["name"] = "dash"
 default["horizon"]["use_ssl"] = true
 default["horizon"]["ssl"]["cert"] = "horizon.pem"
 default["horizon"]["ssl"]["key"] = "horizon.key"
+default["horizon"]["ssl"]["chain"] = nil
 
 # Horizon Services
 default["horizon"]["services"]["dash"]["scheme"] = "http"

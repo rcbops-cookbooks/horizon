@@ -299,6 +299,9 @@ else
   key_location = node["horizon"]["ssl"]["key_override"]
 end
 
+unless node["horizon"]["ssl"]["chain"].nil?
+  chain_location = "#{node["horizon"]["ssl"]["dir"]}/certs/#{node["horizon"]["ssl"]["chain"]}"
+end
 template value_for_platform(
   ["ubuntu", "debian", "fedora"] => {
     "default" => "#{node["apache"]["dir"]}/sites-available/openstack-dashboard"
@@ -322,6 +325,7 @@ template value_for_platform(
       :apache_contact => node["apache"]["contact"],
       :ssl_cert_file => cert_location,
       :ssl_key_file => key_location,
+      :ssl_cert_chain_file => chain_location,
       :apache_log_dir => node["apache"]["log_dir"],
       :django_wsgi_path => node["horizon"]["wsgi_path"],
       :dash_path => node["horizon"]["dash_path"],
