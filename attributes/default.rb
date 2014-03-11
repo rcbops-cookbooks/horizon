@@ -43,11 +43,17 @@ default["horizon"]["services"]["dash_ssl"]["network"] = "public"
 default["horizon"]["services"]["dash_ssl"]["port"] = 443
 default["horizon"]["services"]["dash_ssl"]["path"] = "/"
 
+# Neutron Options
+default["horizon"]["neutron"]["enable_lb"] = "False"
+
 # Enable / Disable Swift panel
 default["horizon"]["swift"]["enabled"] = "False"
 
 # Set Default Theme, Supports "default" or "ubuntu"
 default["horizon"]["theme"] = "default"
+
+# Set Site Branding/Title
+default["horizon"]["site_branding"] = "OpenStack Dashboard"
 
 # Options Customize the theme images
 default["horizon"]["theme_image_update_style"] = false
@@ -90,7 +96,8 @@ case node["platform"]
                                 "python-neutronclient",
                                 "python-keystoneclient",
                                 "python-glanceclient",
-                                "python-novaclient"],
+                                "python-novaclient",
+                                "python-django-compressor"],
       "horizon_packages" => ["openstack-dashboard",
                              "python-netaddr",
                              "nodejs-less"],
@@ -107,7 +114,8 @@ case node["platform"]
                                 "python-neutronclient",
                                 "python-keystoneclient",
                                 "python-glanceclient",
-                                "python-novaclient"],
+                                "python-novaclient",
+                                "python-compressor"],
       "horizon_packages" => ["openstack-dashboard",
                              "python-netaddr",
                              "node-less"],
