@@ -384,11 +384,9 @@ end
 # Here we provide for updating the css files:
 # node["horizon"]["theme_css_list"]
 #   is an array of file names of css scripts to work with
-# node["horizon"]["theme_css_update_style"] =
-#   "cookbook_list" will assume that the list of files are available
-#     as cookbook files
-#   "download_list" will assume that the list of files must be downloaded
-#     from node["horizon"]["theme_css_base"]
+# node["horizon"]["theme_css_update_style"] = true
+#   true to enable the updating of the theme css style
+#   false to leave the default packaged theme css style
 hattr = node["horizon"]
 unless hattr["theme_css_list"].nil?
   if ! hattr["theme_css_base"].nil? && hattr["theme_css_update_style"] == true
@@ -407,11 +405,9 @@ end
 # Here we provide for updating the image files:
 # node["horizon"]["theme_image_list"]
 #   is an array of file names of css scripts to work with
-# node["horizon"]["theme_image_update_style"] =
-#   "cookbook_list" will assume that the list of files are available
-#     as cookbook files
-#   "download_list" will assume that the list of files must be downloaded
-#     from node["horizon"]["theme_image_base"]
+# node["horizon"]["theme_image_update_style"] = true
+#   true to enable the updating of the theme image style
+#   false to leave the default packaged theme image style
 unless hattr["theme_image_list"].nil?
   if ! hattr["theme_image_base"].nil? && hattr["theme_image_update_style"] == true
     hattr["theme_image_list"].each do |imgfile|
